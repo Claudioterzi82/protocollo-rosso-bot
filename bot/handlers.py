@@ -13,9 +13,12 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 
-from . import texts
+from bot.config import CONVERSATION_TIMEOUT
+
 from . import db
-from .states import SanctuaryState, PossibilityState, ActionState, VeloState, EtichettaState
+from . import epistemic
+from . import texts
+from .states import ActionState, EtichettaState, PossibilityState, SanctuaryState, VeloState
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -69,58 +72,75 @@ async def santuario_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def santuario_enter(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip().lower()
-    if text in ("entro", "entra", "/entra"):
+    nxt, ok = epistemic.sanctuary_advance(
+        SanctuaryState.WAITING_ENTER, update.message.text or ""
+    )
+    if ok:
         await db.log_sanctuary_visit(update.effective_user.id, completed=False)
         await update.message.reply_text(
             texts.SANTUARIO_SILENCE,
             parse_mode=ParseMode.MARKDOWN,
         )
-        return SanctuaryState.SILENCE
+        return nxt
     await update.message.reply_text("Scrivi *entro* o premi /entra per varcare la soglia.")
     return SanctuaryState.WAITING_ENTER
 
 
 async def santuario_silence(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip().lower()
-    if "luce" in text:
+    nxt, ok = epistemic.sanctuary_advance(
+        SanctuaryState.SILENCE, update.message.text or ""
+    )
+    if ok:
         await update.message.reply_text(
             texts.SANTUARIO_LIGHT,
             parse_mode=ParseMode.MARKDOWN,
         )
-        return SanctuaryState.LIGHT
+        return nxt
     await update.message.reply_text("Quando sei pronto, scrivi *luce*.")
     return SanctuaryState.SILENCE
 
 
 async def santuario_light(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip().lower()
-    if "altare" in text:
+    nxt, ok = epistemic.sanctuary_advance(
+        SanctuaryState.LIGHT, update.message.text or ""
+    )
+    if ok:
         await update.message.reply_text(
             texts.SANTUARIO_ALTAR,
             parse_mode=ParseMode.MARKDOWN,
         )
-        return SanctuaryState.ALTAR
+        return nxt
     await update.message.reply_text("Quando sei pronto, scrivi *altare*.")
     return SanctuaryState.LIGHT
 
 
 async def santuario_altar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip().lower()
-    if "accendo" in text or "accendi" in text:
+    nxt, ok = epistemic.sanctuary_advance(
+        SanctuaryState.ALTAR, update.message.text or ""
+    )
+    if ok:
         await update.message.reply_text(
             texts.SANTUARIO_CANDLE,
             parse_mode=ParseMode.MARKDOWN,
         )
-        return SanctuaryState.CANDLE
+        return nxt
     await update.message.reply_text("Scrivi *accendo* quando vuoi compiere il gesto.")
     return SanctuaryState.ALTAR
 
 
 async def santuario_candle(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = (update.message.text or "").strip().lower()
-    if "esco" in text or text == "/esci":
+    nxt, ok = epistemic.sanctuary_advance(
+        SanctuaryState.CANDLE, update.message.text or ""
+    )
+    if ok:
         await db.log_sanctuary_visit(update.effective_user.id, completed=True)
+        db.add_epistemic(
+            update.effective_user.id,
+            "TECNICO",
+            "visita al Santuario completata",
+            source="santuario",
+            how_falls="cade se completed_at è vuoto",
+        )
         await update.message.reply_text(
             texts.SANTUARIO_EXIT,
             parse_mode=ParseMode.MARKDOWN,
@@ -150,6 +170,13 @@ async def tieni_aperto_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return PossibilityState.WAITING_TEXT
 
     pid = db.add_possibility(update.effective_user.id, text)
+    db.add_epistemic(
+        update.effective_user.id,
+        "IPOTESI",
+        text,
+        source="tieni_aperto",
+        how_falls=epistemic.P6_UNKNOWN,
+    )
     await update.message.reply_text(
         f"Possibilità custodita come `IPOTESI` (id {pid}).\n\n"
         "Non verrà mai trasformata in certezza da questo bot.\n"
@@ -192,6 +219,13 @@ async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ActionState.WAITING_DESCRIPTION
 
     aid = db.add_action(update.effective_user.id, text)
+    db.add_epistemic(
+        update.effective_user.id,
+        "TECNICO",
+        text,
+        source="azione",
+        how_falls="cade se un terzo non può controllare che sia accaduta",
+    )
     await update.message.reply_text(
         f"Azione registrata nello *strato tecnico* (id {aid}).\n\n"
         "È un dato. Qualcun altro potrebbe, in linea di principio, verificarla.\n"
@@ -238,27 +272,20 @@ async def etichetta_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Scrivi un testo da etichettare.")
         return EtichettaState.WAITING_TEXT
 
-    lower = text.lower()
-    if any(w in lower for w in ("ho visto", "ho misurato", "ho letto alla fonte", "ho eseguito", "dato osservato")):
-        label = "RECUPERATO"
-        note = "Sembra un recupero diretto. Verifica sempre la fonte."
-    elif any(w in lower for w in ("quindi", "dunque", "ne consegue", "si può dedurre")):
-        label = "INFERITO"
-        note = "Sembra una deduzione. Controlla se le premesse sono recuperate."
-    elif any(w in lower for w in ("forse", "potrebbe", "ipotesi", "immagino", "credo che")):
-        label = "IPOTESI"
-        note = "Correttamente aperta. Dichiarane il modo in cui potrebbe cadere (P6)."
-    else:
-        label = "UNKNOWN / IPOTESI"
-        note = (
-            "Non riesco a classificarla con sicurezza da qui. "
-            "Trattala come IPOTESI finché non hai un recupero o un modo di smentirla."
-        )
-
+    judged = epistemic.classify(text)
+    db.add_labeled(update.effective_user.id, text, judged.layer)
+    db.add_epistemic(
+        update.effective_user.id,
+        judged.layer,
+        text,
+        source="etichetta",
+        how_falls=judged.how_falls,
+    )
+    p6 = f"\nP6: {judged.how_falls}" if judged.how_falls else ""
     await update.message.reply_text(
         f"*Testo ricevuto*\n\n_{text[:500]}_\n\n"
-        f"*Etichetta proposta:* `{label}`\n\n"
-        f"{note}\n\n"
+        f"*Etichetta proposta:* `{judged.layer}`\n\n"
+        f"{judged.note}{p6}\n\n"
         "Ricorda P5: se sei tu l'unico a confermarla, non è una conferma.",
         parse_mode=ParseMode.MARKDOWN,
     )
@@ -289,6 +316,9 @@ def build_conversation_handlers():
         },
         fallbacks=[CommandHandler("annulla", santuario_cancel), CommandHandler("cancel", santuario_cancel)],
         allow_reentry=True,
+        name="santuario",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
 
     possibility = ConversationHandler(
@@ -298,7 +328,10 @@ def build_conversation_handlers():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, tieni_aperto_save),
             ],
         },
-        fallbacks=[CommandHandler("annulla", lambda u, c: ConversationHandler.END)],
+        fallbacks=[CommandHandler("annulla", santuario_cancel)],
+        name="tieni_aperto",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
 
     action = ConversationHandler(
@@ -308,7 +341,10 @@ def build_conversation_handlers():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, azione_save),
             ],
         },
-        fallbacks=[CommandHandler("annulla", lambda u, c: ConversationHandler.END)],
+        fallbacks=[CommandHandler("annulla", santuario_cancel)],
+        name="azione",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
 
     velo = ConversationHandler(
@@ -318,7 +354,10 @@ def build_conversation_handlers():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, veli_choice),
             ],
         },
-        fallbacks=[CommandHandler("annulla", lambda u, c: ConversationHandler.END)],
+        fallbacks=[CommandHandler("annulla", santuario_cancel)],
+        name="veli",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
 
     etichetta = ConversationHandler(
@@ -328,10 +367,31 @@ def build_conversation_handlers():
                 MessageHandler(filters.TEXT & ~filters.COMMAND, etichetta_process),
             ],
         },
-        fallbacks=[CommandHandler("annulla", lambda u, c: ConversationHandler.END)],
+        fallbacks=[CommandHandler("annulla", santuario_cancel)],
+        name="etichetta",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
     )
 
     return [sanctuary, possibility, action, velo, etichetta]
+
+
+async def registro(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    rows = db.list_epistemic(update.effective_user.id)
+    if not rows:
+        await update.message.reply_text(
+            "Registro epistemico vuoto. "
+            "Si riempie con /tieni_aperto, /azione, /etichetta, /santuario."
+        )
+        return
+    lines = ["*Registro epistemico* (non è una prova del «già»):\n"]
+    for row in rows:
+        snippet = row["text"]
+        if len(snippet) > 70:
+            snippet = snippet[:67] + "…"
+        p6 = row["how_falls"] or "—"
+        lines.append(f"• `{row['layer']}` _{row['source']}_\n  {snippet}\n  P6: {p6}")
+    await update.message.reply_text("\n".join(lines)[:3900], parse_mode=ParseMode.MARKDOWN)
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -356,6 +416,7 @@ def build_command_handlers():
         CommandHandler("strati", strati),
         CommandHandler("p5p6", p5p6),
         CommandHandler("lista", lista),
+        CommandHandler("registro", registro),
         CommandHandler("aiuto", aiuto),
         CommandHandler("help", aiuto),
         CommandHandler("ping", ping),
