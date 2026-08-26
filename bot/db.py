@@ -1,116 +1,169 @@
-"""
-Persistenza semplice con aiosqlite.
-Tutto ciò che viene salvato è etichettato o è un'azione verificabile.
-"""
+"""Persistenza SQLite. Le possibilità restano IPOTESI; le azioni sono dati tecnici."""
 
-import aiosqlite
-from pathlib import Path
+from __future__ import annotations
+
+import sqlite3
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import Any, Iterator
 
-DB_PATH = Path(__file__).parent.parent / "protocollo.db"
+from bot.config import DATABASE_PATH
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    telegram_id     INTEGER PRIMARY KEY,
+    username        TEXT,
+    first_name      TEXT,
+    created_at      TEXT NOT NULL,
+    last_seen       TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS open_possibilities (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    layer TEXT NOT NULL DEFAULT 'IPOTESI',
+    status TEXT NOT NULL DEFAULT 'APERTA',
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS actions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    description TEXT NOT NULL,
+    how_verifiable TEXT NOT NULL,
+    layer TEXT NOT NULL DEFAULT 'TECNICO',
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sanctuary_visits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    completed INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL,
+    completed_at TEXT
+);
+CREATE TABLE IF NOT EXISTS veil_dissolutions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    veil_id INTEGER NOT NULL,
+    note TEXT,
+    created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS labeled_statements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    statement TEXT NOT NULL,
+    suggested_layer TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
+"""
 
 
-async def init_db():
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS users (
-                user_id INTEGER PRIMARY KEY,
-                username TEXT,
-                first_name TEXT,
-                created_at TEXT
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+@contextmanager
+def connect() -> Iterator[sqlite3.Connection]:
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def init_db() -> None:
+    with connect() as conn:
+        conn.executescript(SCHEMA)
+
+
+def upsert_user(telegram_id: int, username: str | None, first_name: str | None) -> None:
+    now = _now()
+    with connect() as conn:
+        existing = conn.execute(
+            "SELECT telegram_id FROM users WHERE telegram_id = ?", (telegram_id,)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE users SET username = ?, first_name = ?, last_seen = ? WHERE telegram_id = ?",
+                (username, first_name, now, telegram_id),
             )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS open_possibilities (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                text TEXT NOT NULL,
-                label TEXT DEFAULT 'IPOTESI',
-                created_at TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
+        else:
+            conn.execute(
+                "INSERT INTO users (telegram_id, username, first_name, created_at, last_seen) VALUES (?, ?, ?, ?, ?)",
+                (telegram_id, username, first_name, now, now),
             )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS actions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                description TEXT NOT NULL,
-                created_at TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
-            )
-        """)
-        await db.execute("""
-            CREATE TABLE IF NOT EXISTS sanctuary_visits (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                completed INTEGER DEFAULT 0,
-                created_at TEXT,
-                FOREIGN KEY (user_id) REFERENCES users(user_id)
-            )
-        """)
-        await db.commit()
 
 
-async def ensure_user(user_id: int, username: str | None, first_name: str | None):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            """
-            INSERT OR IGNORE INTO users (user_id, username, first_name, created_at)
-            VALUES (?, ?, ?, ?)
-            """,
-            (user_id, username, first_name, datetime.now(timezone.utc).isoformat()),
+def add_possibility(telegram_id: int, text: str) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO open_possibilities (telegram_id, text, layer, status, created_at) VALUES (?, ?, 'IPOTESI', 'APERTA', ?)",
+            (telegram_id, text.strip(), _now()),
         )
-        await db.commit()
+        return int(cur.lastrowid)
 
 
-async def add_possibility(user_id: int, text: str) -> int:
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute(
-            """
-            INSERT INTO open_possibilities (user_id, text, label, created_at)
-            VALUES (?, ?, 'IPOTESI', ?)
-            """,
-            (user_id, text.strip(), datetime.now(timezone.utc).isoformat()),
+def list_possibilities(telegram_id: int) -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT id, text, layer, status, created_at FROM open_possibilities WHERE telegram_id = ? ORDER BY id DESC",
+            (telegram_id,),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_action(telegram_id: int, description: str, how_verifiable: str) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO actions (telegram_id, description, how_verifiable, layer, created_at) VALUES (?, ?, ?, 'TECNICO', ?)",
+            (telegram_id, description.strip(), how_verifiable.strip(), _now()),
         )
-        await db.commit()
-        return cursor.lastrowid
+        return int(cur.lastrowid)
 
 
-async def list_possibilities(user_id: int) -> list[tuple]:
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute(
-            """
-            SELECT id, text, label, created_at
-            FROM open_possibilities
-            WHERE user_id = ?
-            ORDER BY created_at DESC
-            LIMIT 20
-            """,
-            (user_id,),
+def list_actions(telegram_id: int, limit: int = 20) -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT id, description, how_verifiable, layer, created_at FROM actions WHERE telegram_id = ? ORDER BY id DESC LIMIT ?",
+            (telegram_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def start_sanctuary(telegram_id: int) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO sanctuary_visits (telegram_id, completed, started_at) VALUES (?, 0, ?)",
+            (telegram_id, _now()),
         )
-        return await cursor.fetchall()
+        return int(cur.lastrowid)
 
 
-async def add_action(user_id: int, description: str) -> int:
-    async with aiosqlite.connect(DB_PATH) as db:
-        cursor = await db.execute(
-            """
-            INSERT INTO actions (user_id, description, created_at)
-            VALUES (?, ?, ?)
-            """,
-            (user_id, description.strip(), datetime.now(timezone.utc).isoformat()),
+def complete_sanctuary(visit_id: int) -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE sanctuary_visits SET completed = 1, completed_at = ? WHERE id = ?",
+            (_now(), visit_id),
         )
-        await db.commit()
-        return cursor.lastrowid
 
 
-async def log_sanctuary_visit(user_id: int, completed: bool = False):
-    async with aiosqlite.connect(DB_PATH) as db:
-        await db.execute(
-            """
-            INSERT INTO sanctuary_visits (user_id, completed, created_at)
-            VALUES (?, ?, ?)
-            """,
-            (user_id, 1 if completed else 0, datetime.now(timezone.utc).isoformat()),
+def add_veil(telegram_id: int, veil_id: int, note: str | None) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO veil_dissolutions (telegram_id, veil_id, note, created_at) VALUES (?, ?, ?, ?)",
+            (telegram_id, veil_id, (note or "").strip() or None, _now()),
         )
-        await db.commit()
+        return int(cur.lastrowid)
+
+
+def add_labeled(telegram_id: int, statement: str, suggested_layer: str) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO labeled_statements (telegram_id, statement, suggested_layer, created_at) VALUES (?, ?, ?, ?)",
+            (telegram_id, statement.strip(), suggested_layer, _now()),
+        )
+        return int(cur.lastrowid)
