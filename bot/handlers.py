@@ -55,8 +55,6 @@ async def aiuto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# ---------- Santuario (ConversationHandler) ----------
-
 async def santuario_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.ensure_user(
         update.effective_user.id,
@@ -137,8 +135,6 @@ async def santuario_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-# ---------- Tieni aperto ----------
-
 async def tieni_aperto_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         texts.TIENI_APERTO_HELP,
@@ -153,7 +149,7 @@ async def tieni_aperto_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Scrivi la possibilità che vuoi tenere aperta (senza /).")
         return PossibilityState.WAITING_TEXT
 
-    pid = await db.add_possibility(update.effective_user.id, text)
+    pid = db.add_possibility(update.effective_user.id, text)
     await update.message.reply_text(
         f"Possibilità custodita come `IPOTESI` (id {pid}).\n\n"
         "Non verrà mai trasformata in certezza da questo bot.\n"
@@ -163,10 +159,8 @@ async def tieni_aperto_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-# ---------- Lista ----------
-
 async def lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    rows = await db.list_possibilities(update.effective_user.id)
+    rows = db.list_possibilities(update.effective_user.id)
     if not rows:
         await update.message.reply_text(
             "Nessuna possibilità aperta ancora.\nUsa /tieni_aperto per depositarne una."
@@ -174,14 +168,14 @@ async def lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     lines = ["*Le tue possibilità aperte* (tutte etichettate IPOTESI):\n"]
-    for rid, text, label, created in rows:
+    for row in rows:
+        text = row["text"] if isinstance(row, dict) else row[1]
+        rid = row["id"] if isinstance(row, dict) else row[0]
         short = text if len(text) < 80 else text[:77] + "…"
         lines.append(f"• `{rid}` — {short}")
 
     await update.message.reply_text("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
 
-
-# ---------- Azione vera ----------
 
 async def azione_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -197,7 +191,7 @@ async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Descrivi l'azione concreta e verificabile.")
         return ActionState.WAITING_DESCRIPTION
 
-    aid = await db.add_action(update.effective_user.id, text)
+    aid = db.add_action(update.effective_user.id, text)
     await update.message.reply_text(
         f"Azione registrata nello *strato tecnico* (id {aid}).\n\n"
         "È un dato. Qualcun altro potrebbe, in linea di principio, verificarla.\n"
@@ -206,8 +200,6 @@ async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     return ConversationHandler.END
 
-
-# ---------- Veli ----------
 
 async def veli_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
@@ -232,8 +224,6 @@ async def veli_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-# ---------- Etichetta ----------
-
 async def etichetta_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "Incolla o scrivi l'affermazione che vuoi etichettare.\n"
@@ -248,7 +238,6 @@ async def etichetta_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Scrivi un testo da etichettare.")
         return EtichettaState.WAITING_TEXT
 
-    # Heuristica semplice e onesta: non pretendiamo di essere infallibili
     lower = text.lower()
     if any(w in lower for w in ("ho visto", "ho misurato", "ho letto alla fonte", "ho eseguito", "dato osservato")):
         label = "RECUPERATO"
@@ -277,7 +266,6 @@ async def etichetta_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def build_conversation_handlers():
-    """Restituisce la lista di ConversationHandler pronti."""
     sanctuary = ConversationHandler(
         entry_points=[CommandHandler("santuario", santuario_entry)],
         states={
@@ -344,3 +332,32 @@ def build_conversation_handlers():
     )
 
     return [sanctuary, possibility, action, velo, etichetta]
+
+
+async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("vivo. strato tecnico.")
+
+
+async def cmd_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "Comando non riconosciuto. /aiuto per l'elenco. "
+        "Niente è stato chiuso."
+    )
+
+
+async def cmd_annulla_idle(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Nessun percorso aperto da chiudere.")
+
+
+def build_command_handlers():
+    return [
+        CommandHandler("start", start),
+        CommandHandler("tesi", tesi),
+        CommandHandler("strati", strati),
+        CommandHandler("p5p6", p5p6),
+        CommandHandler("lista", lista),
+        CommandHandler("aiuto", aiuto),
+        CommandHandler("help", aiuto),
+        CommandHandler("ping", ping),
+        CommandHandler("annulla", cmd_annulla_idle),
+    ]
