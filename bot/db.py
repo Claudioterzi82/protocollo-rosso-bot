@@ -116,11 +116,12 @@ def list_possibilities(telegram_id: int) -> list[dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
-def add_action(telegram_id: int, description: str, how_verifiable: str) -> int:
+def add_action(telegram_id: int, description: str, how_verifiable: str | None = None) -> int:
+    verify = (how_verifiable or "dichiarato dall'utente; verifica esterna non specificata").strip()
     with connect() as conn:
         cur = conn.execute(
             "INSERT INTO actions (telegram_id, description, how_verifiable, layer, created_at) VALUES (?, ?, ?, 'TECNICO', ?)",
-            (telegram_id, description.strip(), how_verifiable.strip(), _now()),
+            (telegram_id, description.strip(), verify, _now()),
         )
         return int(cur.lastrowid)
 
@@ -167,3 +168,27 @@ def add_labeled(telegram_id: int, statement: str, suggested_layer: str) -> int:
             (telegram_id, statement.strip(), suggested_layer, _now()),
         )
         return int(cur.lastrowid)
+
+
+async def ensure_user(telegram_id: int, username: str | None, first_name: str | None) -> None:
+    upsert_user(telegram_id, username, first_name)
+
+
+async def log_sanctuary_visit(telegram_id: int, completed: bool = False) -> int:
+    if completed:
+        with connect() as conn:
+            row = conn.execute(
+                """
+                SELECT id FROM sanctuary_visits
+                WHERE telegram_id = ? AND completed = 0
+                ORDER BY id DESC LIMIT 1
+                """,
+                (telegram_id,),
+            ).fetchone()
+            if row:
+                complete_sanctuary(int(row["id"]))
+                return int(row["id"])
+        visit_id = start_sanctuary(telegram_id)
+        complete_sanctuary(visit_id)
+        return visit_id
+    return start_sanctuary(telegram_id)
