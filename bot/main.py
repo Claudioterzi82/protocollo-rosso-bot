@@ -1,9 +1,12 @@
-"""Entry point — long polling."""
+"""Entry point — polling + health su PORT (Render free)."""
 
 from __future__ import annotations
 
 import logging
+import os
 import sys
+import threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from telegram import BotCommand, Update
 from telegram.ext import Application, ContextTypes, MessageHandler, filters
@@ -31,8 +34,30 @@ COMMANDS = [
     BotCommand("veli", "Dissolvi uno dei tre veli"),
     BotCommand("etichetta", "Colloca un’affermazione negli strati"),
     BotCommand("aiuto", "Elenco comandi"),
+    BotCommand("ping", "Verifica se il processo è vivo"),
     BotCommand("annulla", "Esci da un flusso in corso"),
 ]
+
+
+class _Health(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.end_headers()
+        self.wfile.write(b"ok")
+
+    def do_HEAD(self) -> None:
+        self.send_response(200)
+        self.end_headers()
+
+    def log_message(self, format: str, *args) -> None:
+        return
+
+
+def start_health(port: int) -> None:
+    server = ThreadingHTTPServer(("0.0.0.0", port), _Health)
+    threading.Thread(target=server.serve_forever, daemon=True, name="health").start()
+    logger.info("Health ok su 0.0.0.0:%s", port)
 
 
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -45,13 +70,15 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def post_init(application: Application) -> None:
+    await application.bot.delete_webhook(drop_pending_updates=False)
     await application.bot.set_my_commands(COMMANDS)
     await application.bot.set_my_description(
         "Protocollo Rosso Rosso Rosso — tenere aperta una possibilità "
         "senza spacciarla per un fatto, poi fare una cosa vera."
     )
     await application.bot.set_my_short_description("Protocollo Rosso · R³∞ · IPOTESI, non fede")
-    logger.info("Comandi registrati. Bot avviato in long polling.")
+    me = await application.bot.get_me()
+    logger.info("Collegato come @%s. Polling.", me.username)
 
 
 def build_application() -> Application:
@@ -73,9 +100,12 @@ def build_application() -> Application:
 
 
 def main() -> None:
+    port = os.getenv("PORT")
+    if port:
+        start_health(int(port))
     app = build_application()
     logger.info("Long polling. Ctrl+C per fermare.")
-    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=False)
 
 
 if __name__ == "__main__":
