@@ -1,29 +1,24 @@
-"""
-Stati per ConversationHandler del Santuario e altri flussi.
-"""
+"""Stati delle ConversationHandler."""
 
-from enum import Enum, auto
+from __future__ import annotations
 
+SANT_SILENZIO = 10
+SANT_CREPUSCOLO = 11
+SANT_COLONNE = 12
+SANT_LIBRO = 13
+SANT_CANDELA = 14
+SANT_USCITA = 15
+SANT_ESCI = 16
 
-class SanctuaryState(Enum):
-    WAITING_ENTER = auto()
-    SILENCE = auto()
-    LIGHT = auto()
-    ALTAR = auto()
-    CANDLE = auto()
+OPEN_WAIT_TEXT = 20
+OPEN_CONFIRM = 21
 
+ACT_WAIT_TEXT = 30
+ACT_WAIT_VERIFY = 31
+ACT_CONFIRM = 32
 
-class PossibilityState(Enum):
-    WAITING_TEXT = auto()
+VEIL_CHOOSE = 40
+VEIL_NOTE = 41
 
-
-class ActionState(Enum):
-    WAITING_DESCRIPTION = auto()
-
-
-class VeloState(Enum):
-    WAITING_CHOICE = auto()
-
-
-class EtichettaState(Enum):
-    WAITING_TEXT = auto()
+LABEL_WAIT = 50
+LABEL_CONFIRM = 51

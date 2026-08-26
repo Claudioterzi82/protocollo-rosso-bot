@@ -1,7 +1,8 @@
-.env
 .venv/
+venv/
 __pycache__/
-*.pyc
+*.py[cod]
+.env
 protocollo.db
 *.db
 .DS_Store

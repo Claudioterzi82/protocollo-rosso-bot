@@ -1,75 +1,81 @@
-"""
-Protocollo Rosso Rosso Rosso — Bot Telegram
-Realizza il protocollo di Claudio Terzi come interfaccia conversazionale.
+"""Entry point — long polling."""
 
-Uso:
-  1. Copia .env.example in .env e inserisci il BOT_TOKEN da @BotFather
-  2. pip install -r requirements.txt
-  3. python -m bot.main
-"""
+from __future__ import annotations
 
 import logging
-import os
-from pathlib import Path
+import sys
 
-from dotenv import load_dotenv
-from telegram.ext import Application, CommandHandler
+from telegram import BotCommand, Update
+from telegram.ext import Application, ContextTypes, MessageHandler, filters
 
-from . import db
-from .handlers import (
-    start,
-    tesi,
-    strati,
-    p5p6,
-    aiuto,
-    lista,
-    build_conversation_handlers,
-)
-
-# Carica .env dalla root del progetto
-load_dotenv(Path(__file__).parent.parent / ".env")
+from bot.config import LOG_LEVEL, require_token
+from bot.db import init_db
+from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown
 
 logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    stream=sys.stdout,
 )
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("protocollo")
+
+COMMANDS = [
+    BotCommand("start", "Ingresso nel protocollo"),
+    BotCommand("tesi", "La tesi grande (IPOTESI + P6)"),
+    BotCommand("strati", "I due strati e le etichette"),
+    BotCommand("p5p6", "Le due leggi"),
+    BotCommand("santuario", "Esperienza guidata del Santuario"),
+    BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
+    BotCommand("lista", "Rivedi le tue possibilità"),
+    BotCommand("azione", "Registra un’azione verificabile"),
+    BotCommand("veli", "Dissolvi uno dei tre veli"),
+    BotCommand("etichetta", "Colloca un’affermazione negli strati"),
+    BotCommand("aiuto", "Elenco comandi"),
+    BotCommand("annulla", "Esci da un flusso in corso"),
+]
 
 
-async def post_init(application: Application):
-    await db.init_db()
-    logger.info("Database inizializzato. Protocollo pronto.")
-
-
-def main():
-    token = os.getenv("BOT_TOKEN")
-    if not token:
-        raise RuntimeError(
-            "BOT_TOKEN non trovato. Copia .env.example in .env e inserisci il token di @BotFather."
+async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+    logger.exception("Errore non gestito: %s", context.error)
+    if isinstance(update, Update) and update.effective_message:
+        await update.effective_message.reply_text(
+            "Qualcosa si è interrotto nello strato tecnico del bot. "
+            "Riprova. Nessuna possibilità è stata chiusa."
         )
 
+
+async def post_init(application: Application) -> None:
+    await application.bot.set_my_commands(COMMANDS)
+    await application.bot.set_my_description(
+        "Protocollo Rosso Rosso Rosso — tenere aperta una possibilità "
+        "senza spacciarla per un fatto, poi fare una cosa vera."
+    )
+    await application.bot.set_my_short_description("Protocollo Rosso · R³∞ · IPOTESI, non fede")
+    logger.info("Comandi registrati. Bot avviato in long polling.")
+
+
+def build_application() -> Application:
+    token = require_token()
+    init_db()
     app = (
         Application.builder()
         .token(token)
         .post_init(post_init)
         .build()
     )
+    for h in build_conversation_handlers():
+        app.add_handler(h)
+    for h in build_command_handlers():
+        app.add_handler(h)
+    app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
+    app.add_error_handler(on_error)
+    return app
 
-    # Comandi semplici
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("tesi", tesi))
-    app.add_handler(CommandHandler("strati", strati))
-    app.add_handler(CommandHandler("p5p6", p5p6))
-    app.add_handler(CommandHandler("aiuto", aiuto))
-    app.add_handler(CommandHandler("help", aiuto))
-    app.add_handler(CommandHandler("lista", lista))
 
-    # ConversationHandlers (Santuario, possibilità, azioni, veli, etichetta)
-    for conv in build_conversation_handlers():
-        app.add_handler(conv)
-
-    logger.info("Avvio Protocollo Rosso Bot (long polling)...")
-    app.run_polling(allowed_updates=["message", "callback_query"])
+def main() -> None:
+    app = build_application()
+    logger.info("Long polling. Ctrl+C per fermare.")
+    app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
 
 
 if __name__ == "__main__":
