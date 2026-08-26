@@ -9,9 +9,9 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from telegram import BotCommand, Update
-from telegram.ext import Application, ContextTypes, MessageHandler, filters
+from telegram.ext import Application, ContextTypes, MessageHandler, PicklePersistence, filters
 
-from bot.config import LOG_LEVEL, require_token
+from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
 from bot.db import init_db
 from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown
 
@@ -30,6 +30,7 @@ COMMANDS = [
     BotCommand("santuario", "Esperienza guidata del Santuario"),
     BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
     BotCommand("lista", "Rivedi le tue possibilità"),
+    BotCommand("registro", "Registro epistemico (strati + P6)"),
     BotCommand("azione", "Registra un’azione verificabile"),
     BotCommand("veli", "Dissolvi uno dei tre veli"),
     BotCommand("etichetta", "Colloca un’affermazione negli strati"),
@@ -84,9 +85,11 @@ async def post_init(application: Application) -> None:
 def build_application() -> Application:
     token = require_token()
     init_db()
+    persistence = PicklePersistence(filepath=PERSISTENCE_PATH)
     app = (
         Application.builder()
         .token(token)
+        .persistence(persistence)
         .post_init(post_init)
         .build()
     )
