@@ -1,0 +1,12 @@
+start - Ingresso nel protocollo
+tesi - La tesi grande (IPOTESI + P6)
+strati - I due strati e le etichette
+p5p6 - Le due leggi
+santuario - Esperienza guidata del Santuario
+tieni_aperto - Deposita una possibilità aperta
+lista - Rivedi le tue possibilità
+azione - Registra un’azione verificabile
+veli - Dissolvi uno dei tre veli
+etichetta - Colloca un’affermazione negli strati
+aiuto - Elenco comandi
+annulla - Esci da un flusso in corso
