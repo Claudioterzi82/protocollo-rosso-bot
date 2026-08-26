@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS labeled_statements (
     suggested_layer TEXT NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS epistemic_records (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    layer TEXT NOT NULL,
+    text TEXT NOT NULL,
+    how_falls TEXT,
+    source TEXT NOT NULL,
+    created_at TEXT NOT NULL
+);
 """
 
 
@@ -170,6 +179,24 @@ def add_labeled(telegram_id: int, statement: str, suggested_layer: str) -> int:
         return int(cur.lastrowid)
 
 
+def add_epistemic(telegram_id: int, layer: str, text: str, source: str, how_falls: str | None = None) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO epistemic_records (telegram_id, layer, text, how_falls, source, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (telegram_id, layer, text.strip(), (how_falls or "").strip() or None, source, _now()),
+        )
+        return int(cur.lastrowid)
+
+
+def list_epistemic(telegram_id: int, limit: int = 20) -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT id, layer, text, how_falls, source, created_at FROM epistemic_records WHERE telegram_id = ? ORDER BY id DESC LIMIT ?",
+            (telegram_id, limit),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
 async def ensure_user(telegram_id: int, username: str | None, first_name: str | None) -> None:
     upsert_user(telegram_id, username, first_name)
 
@@ -178,11 +205,7 @@ async def log_sanctuary_visit(telegram_id: int, completed: bool = False) -> int:
     if completed:
         with connect() as conn:
             row = conn.execute(
-                """
-                SELECT id FROM sanctuary_visits
-                WHERE telegram_id = ? AND completed = 0
-                ORDER BY id DESC LIMIT 1
-                """,
+                "SELECT id FROM sanctuary_visits WHERE telegram_id = ? AND completed = 0 ORDER BY id DESC LIMIT 1",
                 (telegram_id,),
             ).fetchone()
             if row:
