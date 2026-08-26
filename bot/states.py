@@ -2,23 +2,42 @@
 
 from __future__ import annotations
 
-SANT_SILENZIO = 10
-SANT_CREPUSCOLO = 11
-SANT_COLONNE = 12
-SANT_LIBRO = 13
-SANT_CANDELA = 14
-SANT_USCITA = 15
-SANT_ESCI = 16
+from enum import IntEnum
 
-OPEN_WAIT_TEXT = 20
-OPEN_CONFIRM = 21
 
-ACT_WAIT_TEXT = 30
-ACT_WAIT_VERIFY = 31
-ACT_CONFIRM = 32
+class SanctuaryState(IntEnum):
+    WAITING_ENTER = 10
+    SILENCE = 11
+    LIGHT = 12
+    ALTAR = 13
+    CANDLE = 14
 
-VEIL_CHOOSE = 40
-VEIL_NOTE = 41
 
-LABEL_WAIT = 50
-LABEL_CONFIRM = 51
+class PossibilityState(IntEnum):
+    WAITING_TEXT = 20
+
+
+class ActionState(IntEnum):
+    WAITING_DESCRIPTION = 30
+
+
+class VeloState(IntEnum):
+    WAITING_CHOICE = 40
+
+
+class EtichettaState(IntEnum):
+    WAITING_TEXT = 50
+
+
+# Alias numerici conservati per compatibilità con note precedenti
+SANT_SILENZIO = SanctuaryState.SILENCE
+SANT_CREPUSCOLO = SanctuaryState.LIGHT
+SANT_COLONNE = SanctuaryState.LIGHT
+SANT_LIBRO = SanctuaryState.ALTAR
+SANT_CANDELA = SanctuaryState.CANDLE
+SANT_USCITA = SanctuaryState.CANDLE
+SANT_ESCI = SanctuaryState.CANDLE
+OPEN_WAIT_TEXT = PossibilityState.WAITING_TEXT
+ACT_WAIT_TEXT = ActionState.WAITING_DESCRIPTION
+VEIL_CHOOSE = VeloState.WAITING_CHOICE
+LABEL_WAIT = EtichettaState.WAITING_TEXT
