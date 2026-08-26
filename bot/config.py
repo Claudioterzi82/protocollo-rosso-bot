@@ -16,6 +16,10 @@ TELEGRAM_BOT_TOKEN = (
     or os.getenv("BOT_TOKEN", "").strip()
 )
 DATABASE_PATH = os.getenv("DATABASE_PATH", str(BASE_DIR / "protocollo.db"))
+PERSISTENCE_PATH = os.getenv(
+    "PERSISTENCE_PATH", str(BASE_DIR / "protocollo.persistence")
+)
+CONVERSATION_TIMEOUT = int(os.getenv("CONVERSATION_TIMEOUT", "1800"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 

@@ -5,4 +5,7 @@ __pycache__/
 .env
 protocollo.db
 *.db
+protocollo.persistence
+*.persistence
+*.pickle
 .DS_Store
