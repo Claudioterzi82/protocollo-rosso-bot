@@ -15,6 +15,7 @@ class SanctuaryState(IntEnum):
 
 class PossibilityState(IntEnum):
     WAITING_TEXT = 20
+    WAITING_P6 = 21
 
 
 class ActionState(IntEnum):
