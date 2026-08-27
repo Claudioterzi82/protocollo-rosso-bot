@@ -31,6 +31,7 @@ COMMANDS = [
     BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
     BotCommand("lista", "Rivedi le tue possibilità"),
     BotCommand("registro", "Registro epistemico (strati + P6)"),
+    BotCommand("stato", "Conteggi tecnici del diario"),
     BotCommand("azione", "Registra un’azione verificabile"),
     BotCommand("veli", "Dissolvi uno dei tre veli"),
     BotCommand("etichetta", "Colloca un’affermazione negli strati"),
@@ -45,7 +46,7 @@ class _Health(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"ok")
+        self.wfile.write(b"ok protocollo-rosso-bot 1.1.0")
 
     def do_HEAD(self) -> None:
         self.send_response(200)
