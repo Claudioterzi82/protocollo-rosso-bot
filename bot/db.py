@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS open_possibilities (
     text TEXT NOT NULL,
     layer TEXT NOT NULL DEFAULT 'IPOTESI',
     status TEXT NOT NULL DEFAULT 'APERTA',
+    how_falls TEXT,
     created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS actions (
@@ -84,9 +85,19 @@ def connect() -> Iterator[sqlite3.Connection]:
         conn.close()
 
 
+def _migrate(conn: sqlite3.Connection) -> None:
+    cols = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(open_possibilities)").fetchall()
+    }
+    if cols and "how_falls" not in cols:
+        conn.execute("ALTER TABLE open_possibilities ADD COLUMN how_falls TEXT")
+
+
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
 
 
 def upsert_user(telegram_id: int, username: str | None, first_name: str | None) -> None:
@@ -107,11 +118,11 @@ def upsert_user(telegram_id: int, username: str | None, first_name: str | None) 
             )
 
 
-def add_possibility(telegram_id: int, text: str) -> int:
+def add_possibility(telegram_id: int, text: str, how_falls: str | None = None) -> int:
     with connect() as conn:
         cur = conn.execute(
-            "INSERT INTO open_possibilities (telegram_id, text, layer, status, created_at) VALUES (?, ?, 'IPOTESI', 'APERTA', ?)",
-            (telegram_id, text.strip(), _now()),
+            "INSERT INTO open_possibilities (telegram_id, text, layer, status, how_falls, created_at) VALUES (?, ?, 'IPOTESI', 'APERTA', ?, ?)",
+            (telegram_id, text.strip(), (how_falls or "").strip() or None, _now()),
         )
         return int(cur.lastrowid)
 
@@ -119,7 +130,7 @@ def add_possibility(telegram_id: int, text: str) -> int:
 def list_possibilities(telegram_id: int) -> list[dict[str, Any]]:
     with connect() as conn:
         rows = conn.execute(
-            "SELECT id, text, layer, status, created_at FROM open_possibilities WHERE telegram_id = ? ORDER BY id DESC",
+            "SELECT id, text, layer, status, how_falls, created_at FROM open_possibilities WHERE telegram_id = ? ORDER BY id DESC",
             (telegram_id,),
         ).fetchall()
     return [dict(r) for r in rows]
@@ -195,6 +206,58 @@ def list_epistemic(telegram_id: int, limit: int = 20) -> list[dict[str, Any]]:
             (telegram_id, limit),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+def set_possibility_how_falls(telegram_id: int, possibility_id: int, how_falls: str) -> bool:
+    note = how_falls.strip()
+    if not note:
+        return False
+    with connect() as conn:
+        cur = conn.execute(
+            "UPDATE open_possibilities SET how_falls = ? WHERE id = ? AND telegram_id = ?",
+            (note, possibility_id, telegram_id),
+        )
+        if not cur.rowcount:
+            return False
+        conn.execute(
+            """
+            UPDATE epistemic_records
+            SET how_falls = ?
+            WHERE id = (
+                SELECT id FROM epistemic_records
+                WHERE telegram_id = ? AND source = 'tieni_aperto'
+                ORDER BY id DESC LIMIT 1
+            )
+            """,
+            (note, telegram_id),
+        )
+        return True
+
+
+def user_counts(telegram_id: int) -> dict[str, int]:
+    with connect() as conn:
+        poss = conn.execute(
+            "SELECT COUNT(*) AS n FROM open_possibilities WHERE telegram_id = ?",
+            (telegram_id,),
+        ).fetchone()["n"]
+        acts = conn.execute(
+            "SELECT COUNT(*) AS n FROM actions WHERE telegram_id = ?",
+            (telegram_id,),
+        ).fetchone()["n"]
+        visits = conn.execute(
+            "SELECT COUNT(*) AS n FROM sanctuary_visits WHERE telegram_id = ? AND completed = 1",
+            (telegram_id,),
+        ).fetchone()["n"]
+        recs = conn.execute(
+            "SELECT COUNT(*) AS n FROM epistemic_records WHERE telegram_id = ?",
+            (telegram_id,),
+        ).fetchone()["n"]
+    return {
+        "possibilities": int(poss),
+        "actions": int(acts),
+        "sanctuary_completed": int(visits),
+        "epistemic": int(recs),
+    }
 
 
 async def ensure_user(telegram_id: int, username: str | None, first_name: str | None) -> None:
