@@ -1,13 +1,16 @@
 start - Ingresso nel protocollo
+bussola - Due strati e due leggi, in breve
 tesi - La tesi grande (IPOTESI + P6)
 strati - I due strati e le etichette
 p5p6 - Le due leggi
 santuario - Esperienza guidata del Santuario
+gesto - Un gesto vero, fuori dal bot
 tieni_aperto - Deposita una possibilità aperta
 lista - Rivedi le tue possibilità
 registro - Registro epistemico (strati + P6)
 stato - Conteggi tecnici del diario
 azione - Registra un’azione verificabile
+azioni - Elenco delle azioni registrate
 veli - Dissolvi uno dei tre veli
 etichetta - Colloca un’affermazione negli strati
 aiuto - Elenco comandi
