@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS actions (
     layer TEXT NOT NULL DEFAULT 'TECNICO',
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS testimoni (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    telegram_id INTEGER NOT NULL,
+    chi TEXT NOT NULL,
+    atto TEXT NOT NULL,
+    esito TEXT,
+    created_at TEXT NOT NULL,
+    esito_at TEXT
+);
 CREATE TABLE IF NOT EXISTS sanctuary_visits (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     telegram_id INTEGER NOT NULL,
@@ -152,6 +161,43 @@ def list_actions(telegram_id: int, limit: int = 20) -> list[dict[str, Any]]:
             "SELECT id, description, how_verifiable, layer, created_at FROM actions WHERE telegram_id = ? ORDER BY id DESC LIMIT ?",
             (telegram_id, limit),
         ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_testimone(telegram_id: int, chi: str, atto: str) -> int:
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO testimoni (telegram_id, chi, atto, created_at) VALUES (?, ?, ?, ?)",
+            (telegram_id, chi.strip(), atto.strip(), _now()),
+        )
+        return int(cur.lastrowid)
+
+
+def get_testimone(telegram_id: int, testimone_id: int) -> dict[str, Any] | None:
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM testimoni WHERE id = ? AND telegram_id = ?",
+            (testimone_id, telegram_id),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def set_esito_testimone(telegram_id: int, testimone_id: int, esito: str) -> bool:
+    with connect() as conn:
+        cur = conn.execute(
+            "UPDATE testimoni SET esito = ?, esito_at = ? WHERE id = ? AND telegram_id = ? AND esito IS NULL",
+            (esito, _now(), testimone_id, telegram_id),
+        )
+        return cur.rowcount > 0
+
+
+def list_testimoni(telegram_id: int, solo_aperti: bool = False, limit: int = 20) -> list[dict[str, Any]]:
+    query = "SELECT * FROM testimoni WHERE telegram_id = ?"
+    if solo_aperti:
+        query += " AND esito IS NULL"
+    query += " ORDER BY id DESC LIMIT ?"
+    with connect() as conn:
+        rows = conn.execute(query, (telegram_id, limit)).fetchall()
     return [dict(r) for r in rows]
 
 
