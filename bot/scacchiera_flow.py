@@ -1,4 +1,4 @@
-"""Flusso Telegram della Scacchiera e voce breve del libro."""
+"""Flusso Telegram: Scacchiera + libro paginato."""
 
 from telegram import Update
 from telegram.constants import ParseMode
@@ -6,8 +6,9 @@ from telegram.ext import CommandHandler, ContextTypes, ConversationHandler, Mess
 
 from bot.config import CONVERSATION_TIMEOUT
 from bot import db
+from bot import libro as book
 from bot import scacchiera as sq
-from bot.states import ScacchieraState
+from bot.states import LibroState, ScacchieraState
 
 
 async def scacchiera_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -44,12 +45,45 @@ async def scacchiera_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-async def libro(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(sq.LIBRO, parse_mode=ParseMode.MARKDOWN)
-
-
 async def scacchiera_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Scacchiera chiusa. Nessuna casa è stata occupata.")
+    return ConversationHandler.END
+
+
+async def libro_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    context.user_data["libro_i"] = 0
+    await update.message.reply_text(book.indice())
+    _i, corpo = book.pagina(0)
+    await update.message.reply_text(corpo)
+    return LibroState.WAITING_PAGE
+
+
+async def libro_nav(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    raw = (update.message.text or "").strip().lower()
+    i = int(context.user_data.get("libro_i") or 0)
+    if raw in {"fine", "esci", "stop", "chiudi"}:
+        await update.message.reply_text("Libro chiuso. Niente è stato creduto al posto tuo.")
+        return ConversationHandler.END
+    if raw in {"indice", "menu"}:
+        await update.message.reply_text(book.indice())
+        return LibroState.WAITING_PAGE
+    if raw in {"avanti", "dopo", "next", "+", ">"}:
+        i += 1
+    elif raw in {"indietro", "prima", "prev", "-", "<"}:
+        i -= 1
+    elif raw.isdigit():
+        i = int(raw)
+    else:
+        await update.message.reply_text("Scrivi avanti, indietro, un numero, indice o fine.")
+        return LibroState.WAITING_PAGE
+    i, corpo = book.pagina(i)
+    context.user_data["libro_i"] = i
+    await update.message.reply_text(corpo)
+    return LibroState.WAITING_PAGE
+
+
+async def libro_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("Libro chiuso.")
     return ConversationHandler.END
 
 
@@ -68,7 +102,20 @@ def build_scacchiera_conversation():
     )
 
 
+def build_libro_conversation():
+    return ConversationHandler(
+        entry_points=[CommandHandler("libro", libro_entry)],
+        states={
+            LibroState.WAITING_PAGE: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, libro_nav),
+            ],
+        },
+        fallbacks=[CommandHandler("annulla", libro_cancel), CommandHandler("fine", libro_cancel)],
+        name="libro",
+        persistent=True,
+        conversation_timeout=CONVERSATION_TIMEOUT,
+    )
+
+
 def scacchiera_command_handlers():
-    return [
-        CommandHandler("libro", libro),
-    ]
+    return []
