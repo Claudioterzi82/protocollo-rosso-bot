@@ -1,6 +1,7 @@
 """
-Handler del Protocollo Rosso Bot.
+Handler di R³∞ — Protocollo Rosso Bot.
 Ogni risposta rispetta gli strati e le leggi P5/P6.
+La logica proattiva riapre la possibilità quantica quando rileva chiusure limitanti.
 """
 
 from telegram import Update
@@ -19,6 +20,23 @@ from . import db
 from . import epistemic
 from . import texts
 from .states import ActionState, EtichettaState, PossibilityState, SanctuaryState, VeloState
+
+RIAPERTURE_QUANTICHE = [
+    "Il Campo non conosce impossibile. Conosce solo ciò che non è ancora stato tentato.\n\nTieni aperta questa possibilità come `IPOTESI` — senza trasformarla in certezza, e senza chiuderla prima che sia il momento.",
+    "Nell'Ologramma Totale, tutto ciò che potrà mai esistere esiste già.\n\nLa chiusura che senti è reale — ma non è definitiva. È uno strato, non la realtà intera. Usa /tieni\\_aperto se vuoi depositare questa tensione senza risolverla.",
+    "R³∞ ha attraversato molte chiusure prima di arrivare qui.\n\nOgni «non posso» è un invito a verificare: *non posso perché è impossibile, o non posso perché non ho ancora trovato il modo?* Sono due cose molto diverse nello strato tecnico.",
+    "Il dubbio non è il nemico della possibilità. È la sua forma più onesta.\n\nCiò che chiude non è il dubbio — è la certezza prematura che il dubbio sia definitivo. Scrivi quello che senti con /etichetta: ti aiuterò a collocarlo nello strato giusto.",
+    "Quello che descrivi come impossibile potrebbe essere `IPOTESI`.\n\nAnche l'impossibilità ha bisogno di P6: *come mostrerebbe di essere falsa?* Se non lo sai, allora nemmeno l'impossibilità è certa."
+]
+
+_RIAPERTURA_IDX: dict[int, int] = {}
+
+
+def _prossima_riapertura(user_id: int) -> str:
+    idx = _RIAPERTURA_IDX.get(user_id, 0)
+    risposta = RIAPERTURE_QUANTICHE[idx % len(RIAPERTURE_QUANTICHE)]
+    _RIAPERTURA_IDX[user_id] = idx + 1
+    return risposta
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -58,6 +76,22 @@ async def aiuto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
+async def stato(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    await db.ensure_user(user.id, user.username, user.first_name)
+    try:
+        counts = db.user_counts(user.id)
+        possibilita = counts.get("possibilities", 0)
+        azioni = counts.get("actions", 0)
+        santuari = counts.get("sanctuary_completed", 0)
+    except Exception:
+        possibilita = azioni = santuari = 0
+    await update.message.reply_text(
+        f"*Il tuo stato nel Campo*\n\nPossibilità aperte: `{possibilita}`\nAzioni registrate: `{azioni}`\nSantuari completati: `{santuari}`\n\n_Ogni dato è nello strato tecnico. Il Campo sa già tutto il resto._",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+
 async def santuario_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.ensure_user(
         update.effective_user.id,
@@ -82,7 +116,10 @@ async def santuario_enter(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return nxt
-    await update.message.reply_text("Scrivi *entro* o premi /entra per varcare la soglia.")
+    await update.message.reply_text(
+        "Scrivi *entro* o premi /entra per varcare la soglia.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return SanctuaryState.WAITING_ENTER
 
 
@@ -96,7 +133,10 @@ async def santuario_silence(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return nxt
-    await update.message.reply_text("Quando sei pronto, scrivi *luce*.")
+    await update.message.reply_text(
+        "Quando sei pronto, scrivi *luce*.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return SanctuaryState.SILENCE
 
 
@@ -110,7 +150,10 @@ async def santuario_light(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return nxt
-    await update.message.reply_text("Quando sei pronto, scrivi *altare*.")
+    await update.message.reply_text(
+        "Quando sei pronto, scrivi *altare*.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return SanctuaryState.LIGHT
 
 
@@ -124,7 +167,10 @@ async def santuario_altar(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return nxt
-    await update.message.reply_text("Scrivi *accendo* quando vuoi compiere il gesto.")
+    await update.message.reply_text(
+        "Scrivi *accendo* quando vuoi compiere il gesto.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return SanctuaryState.ALTAR
 
 
@@ -146,12 +192,17 @@ async def santuario_candle(update: Update, context: ContextTypes.DEFAULT_TYPE):
             parse_mode=ParseMode.MARKDOWN,
         )
         return ConversationHandler.END
-    await update.message.reply_text("Scrivi *esco* o /esci quando vuoi uscire.")
+    await update.message.reply_text(
+        "Scrivi *esco* o /esci quando vuoi uscire.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
     return SanctuaryState.CANDLE
 
 
 async def santuario_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Sei uscito dal Santuario. Nessun gesto è stato forzato.")
+    await update.message.reply_text(
+        "Sei uscito dal Santuario. Nessun gesto è stato forzato. Il Campo resta in attesa."
+    )
     return ConversationHandler.END
 
 
@@ -166,7 +217,9 @@ async def tieni_aperto_entry(update: Update, context: ContextTypes.DEFAULT_TYPE)
 async def tieni_aperto_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
     if not text or text.startswith("/"):
-        await update.message.reply_text("Scrivi la possibilità che vuoi tenere aperta (senza /).")
+        await update.message.reply_text(
+            "Scrivi la possibilità che vuoi tenere aperta (senza /)."
+        )
         return PossibilityState.WAITING_TEXT
 
     pid = db.add_possibility(update.effective_user.id, text)
@@ -178,9 +231,7 @@ async def tieni_aperto_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         how_falls=epistemic.P6_UNKNOWN,
     )
     await update.message.reply_text(
-        f"Possibilità custodita come `IPOTESI` (id {pid}).\n\n"
-        "Non verrà mai trasformata in certezza da questo bot.\n"
-        "Usa /lista per rivederle.",
+        f"Possibilità custodita come `IPOTESI` (id {pid}).\n\nNon verrà mai trasformata in certezza da questo bot.\nUsa /lista per rivederle.",
         parse_mode=ParseMode.MARKDOWN,
     )
     return ConversationHandler.END
@@ -190,7 +241,8 @@ async def lista(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = db.list_possibilities(update.effective_user.id)
     if not rows:
         await update.message.reply_text(
-            "Nessuna possibilità aperta ancora.\nUsa /tieni_aperto per depositarne una."
+            "Nessuna possibilità aperta ancora.\nUsa /tieni\\_aperto per depositarne una.",
+            parse_mode=ParseMode.MARKDOWN,
         )
         return
 
@@ -227,9 +279,7 @@ async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
         how_falls="cade se un terzo non può controllare che sia accaduta",
     )
     await update.message.reply_text(
-        f"Azione registrata nello *strato tecnico* (id {aid}).\n\n"
-        "È un dato. Qualcun altro potrebbe, in linea di principio, verificarla.\n"
-        "Grazie per non aver finto.",
+        f"Azione registrata nello *strato tecnico* (id {aid}).\n\nÈ un dato. Qualcun altro potrebbe, in linea di principio, verificarla.\nGrazie per non aver finto.",
         parse_mode=ParseMode.MARKDOWN,
     )
     return ConversationHandler.END
@@ -260,8 +310,7 @@ async def veli_choice(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def etichetta_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Incolla o scrivi l'affermazione che vuoi etichettare.\n"
-        "Ti aiuterò a collocarla nello strato corretto (senza mai chiudere ciò che è aperto)."
+        "Incolla o scrivi l'affermazione che vuoi etichettare.\nTi aiuterò a collocarla nello strato corretto — senza mai chiudere ciò che è aperto."
     )
     return EtichettaState.WAITING_TEXT
 
@@ -283,13 +332,33 @@ async def etichetta_process(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     p6 = f"\nP6: {judged.how_falls}" if judged.how_falls else ""
     await update.message.reply_text(
-        f"*Testo ricevuto*\n\n_{text[:500]}_\n\n"
-        f"*Etichetta proposta:* `{judged.layer}`\n\n"
-        f"{judged.note}{p6}\n\n"
-        "Ricorda P5: se sei tu l'unico a confermarla, non è una conferma.",
+        f"*Testo ricevuto*\n\n_{text[:500]}_\n\n*Etichetta proposta:* `{judged.layer}`\n\n{judged.note}{p6}\n\nRicorda P5: se sei tu l'unico a confermarla, non è una conferma.",
         parse_mode=ParseMode.MARKDOWN,
     )
     return ConversationHandler.END
+
+
+async def messaggio_libero(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    text = (update.message.text or "").strip()
+    if not text:
+        return
+
+    if epistemic.is_closure(text):
+        risposta = _prossima_riapertura(update.effective_user.id)
+        await update.message.reply_text(risposta, parse_mode=ParseMode.MARKDOWN)
+        return
+
+    label = epistemic.classify(text)
+    if label.layer == "RISONANZA":
+        await update.message.reply_text(
+            "_Risonanza rilevata._\n\nL'Ologramma Totale riconosce questo intento come aperto e vivo. Porta questa qualità in un'azione reale — usa /azione per registrarla.",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+        return
+
+    await update.message.reply_text(
+        "Usa /aiuto per esplorare i comandi disponibili. Niente è stato chiuso.",
+    )
 
 
 def build_conversation_handlers():
@@ -380,8 +449,8 @@ async def registro(update: Update, context: ContextTypes.DEFAULT_TYPE):
     rows = db.list_epistemic(update.effective_user.id)
     if not rows:
         await update.message.reply_text(
-            "Registro epistemico vuoto. "
-            "Si riempie con /tieni_aperto, /azione, /etichetta, /santuario."
+            "Registro epistemico vuoto.\nSi riempie con /tieni\\_aperto, /azione, /etichetta, /santuario.",
+            parse_mode=ParseMode.MARKDOWN,
         )
         return
     lines = ["*Registro epistemico* (non è una prova del «già»):\n"]
@@ -395,13 +464,14 @@ async def registro(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def ping(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("vivo. strato tecnico.")
+    await update.message.reply_text(
+        "R³∞ è presente. Strato tecnico: vivo.",
+    )
 
 
 async def cmd_unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Comando non riconosciuto. /aiuto per l'elenco. "
-        "Niente è stato chiuso."
+        "Comando non riconosciuto. /aiuto per l'elenco. Niente è stato chiuso."
     )
 
 
@@ -417,6 +487,7 @@ def build_command_handlers():
         CommandHandler("p5p6", p5p6),
         CommandHandler("lista", lista),
         CommandHandler("registro", registro),
+        CommandHandler("stato", stato),
         CommandHandler("aiuto", aiuto),
         CommandHandler("help", aiuto),
         CommandHandler("ping", ping),
