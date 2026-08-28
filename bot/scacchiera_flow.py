@@ -7,6 +7,7 @@ from telegram.ext import CommandHandler, ContextTypes, ConversationHandler, Mess
 from bot.config import CONVERSATION_TIMEOUT
 from bot import db
 from bot import libro as book
+from bot import media
 from bot import scacchiera as sq
 from bot.states import LibroState, ScacchieraState
 
@@ -17,6 +18,7 @@ async def scacchiera_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
         update.effective_user.username,
         update.effective_user.first_name,
     )
+    await media.manda(update, "scacchiera", sempre=True)
     await update.message.reply_text(
         sq.INTRO + "\n" + sq.elenco(),
         parse_mode=ParseMode.MARKDOWN,
@@ -52,6 +54,7 @@ async def scacchiera_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def libro_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["libro_i"] = 0
+    await media.manda(update, "libro", p=0.7)
     await update.message.reply_text(book.indice())
     _i, corpo = book.pagina(0)
     await update.message.reply_text(corpo)
