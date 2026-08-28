@@ -1,10 +1,8 @@
-"""Immagini rare — non un museo, un gesto visivo.
-
-Telegram scarica l'URL. Se un giorno metti file in bot/media/, vincono quelli.
-"""
+"""Immagini rare — non un museo, un gesto visivo."""
 
 from __future__ import annotations
 
+import base64
 import logging
 import random
 from pathlib import Path
@@ -12,10 +10,8 @@ from pathlib import Path
 from telegram import Update
 
 logger = logging.getLogger("protocollo.media")
-
 _DIR = Path(__file__).resolve().parent / "media"
 
-# Foto pubbliche (Unsplash) — atmosfera, niente logo, niente volto.
 URL = {
     "ingresso": (
         "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429"
@@ -53,14 +49,29 @@ CAPTION = {
 }
 
 
+def _locale(chiave: str):
+    _DIR.mkdir(parents=True, exist_ok=True)
+    jpg = _DIR / f"{chiave}.jpg"
+    if jpg.exists() and jpg.stat().st_size > 0:
+        return jpg.open("rb")
+    raw = _DIR / f"{chiave}.b64"
+    if raw.exists():
+        try:
+            jpg.write_bytes(base64.b64decode(raw.read_text(encoding="ascii")))
+            return jpg.open("rb")
+        except Exception:
+            logger.exception("decode %s", chiave)
+    return None
+
+
 def _sorgente(chiave: str):
-    locale = _DIR / f"{chiave}.jpg"
-    if locale.exists():
-        return locale.open("rb")
+    loc = _locale(chiave)
+    if loc is not None:
+        return loc
     return URL.get(chiave)
 
 
-async def manda(update: Update, chiave: str, *, sempre: bool = False, p: float = 0.45) -> None:
+async def manda(update: Update, chiave: str, *, sempre: bool = False, p: float = 0.4) -> None:
     if update.message is None:
         return
     if not sempre and random.random() > p:
