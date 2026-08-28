@@ -4,6 +4,8 @@ Ogni risposta rispetta gli strati e le leggi P5/P6.
 La logica proattiva riapre la possibilità quantica quando rileva chiusure limitanti.
 """
 
+import time
+
 from telegram import Update
 from telegram.ext import (
     ContextTypes,
@@ -14,7 +16,7 @@ from telegram.ext import (
 )
 from telegram.constants import ParseMode
 
-from bot.config import CONVERSATION_TIMEOUT
+from bot.config import CONVERSATION_TIMEOUT, SOGLIA_GESTO_LENTO
 
 from . import db
 from . import epistemic
@@ -82,12 +84,32 @@ async def stato(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         counts = db.user_counts(user.id)
         possibilita = counts.get("possibilities", 0)
-        azioni = counts.get("actions", 0)
         santuari = counts.get("sanctuary_completed", 0)
+        azioni, verificabili = db.count_actions(user.id)
     except Exception:
-        possibilita = azioni = santuari = 0
+        possibilita = azioni = verificabili = santuari = 0
+
+    # Il numero che conta e' il secondo. Mostrare solo il totale farebbe
+    # sembrare verificabile cio' che nessuno puo' controllare (P5).
+    riga_azioni = f"Azioni registrate: `{azioni}` — di cui verificabili da un terzo: `{verificabili}`"
+    coda = (
+        "\n\n_Ogni dato è nello strato tecnico._"
+        if verificabili == azioni
+        else (
+            f"\n\n_{azioni - verificabili} "
+            + ("azione non ha" if azioni - verificabili == 1 else "azioni non hanno")
+            + " una verifica esterna: "
+            + ("resta un dato, ma nessuno può controllarla._"
+               if azioni - verificabili == 1
+               else "restano dati, ma nessuno può controllarle._")
+        )
+    )
     await update.message.reply_text(
-        f"*Il tuo stato nel Campo*\n\nPossibilità aperte: `{possibilita}`\nAzioni registrate: `{azioni}`\nSantuari completati: `{santuari}`\n\n_Ogni dato è nello strato tecnico. Il Campo sa già tutto il resto._",
+        f"*Il tuo stato nel Campo*\n\n"
+        f"Possibilità aperte: `{possibilita}`\n"
+        f"{riga_azioni}\n"
+        f"Santuari completati (gesto lento misurato): `{santuari}`"
+        f"{coda}",
         parse_mode=ParseMode.MARKDOWN,
     )
 
@@ -162,6 +184,11 @@ async def santuario_altar(update: Update, context: ContextTypes.DEFAULT_TYPE):
         SanctuaryState.ALTAR, update.message.text or ""
     )
     if ok:
+        # Il cronometro parte quando il testo della candela viene mostrato,
+        # non quando l'utente dichiara di aver finito: e' la sola finestra
+        # dentro cui il gesto puo' essere avvenuto.
+        context.user_data["candela_t0"] = time.monotonic()
+        context.user_data["candela_tentativi"] = 0
         await update.message.reply_text(
             texts.SANTUARIO_CANDLE,
             parse_mode=ParseMode.MARKDOWN,
@@ -179,18 +206,45 @@ async def santuario_candle(update: Update, context: ContextTypes.DEFAULT_TYPE):
         SanctuaryState.CANDLE, update.message.text or ""
     )
     if ok:
-        await db.log_sanctuary_visit(update.effective_user.id, completed=True)
+        t0 = context.user_data.get("candela_t0")
+        durata = time.monotonic() - t0 if t0 is not None else 0.0
+        lento = durata >= SOGLIA_GESTO_LENTO
+        tentativi = context.user_data.get("candela_tentativi", 0) + 1
+        context.user_data["candela_tentativi"] = tentativi
+
+        if not lento and tentativi == 1:
+            # Una volta sola. Insistere trasformerebbe il Santuario in una
+            # missione da completare, che e' esattamente cio' che non e'.
+            context.user_data["candela_t0"] = time.monotonic()
+            await update.message.reply_text(
+                texts.SANTUARIO_TROPPO_VELOCE.format(secondi=int(durata)),
+                parse_mode=ParseMode.MARKDOWN,
+            )
+            return SanctuaryState.CANDLE
+
+        await db.log_sanctuary_visit(
+            update.effective_user.id, completed=lento,
+            duration=durata, slow=lento,
+        )
         db.add_epistemic(
             update.effective_user.id,
             "TECNICO",
-            "visita al Santuario completata",
+            f"gesto della candela: {int(durata)}s "
+            f"({'completo' if lento else 'incompleto'})",
             source="santuario",
-            how_falls="cade se completed_at è vuoto",
+            # Il criterio precedente — «cade se completed_at è vuoto» — non
+            # poteva cadere: completed_at lo scriveva la riga sopra. Questo
+            # cade davvero, perche' la durata e' misurata e puo' stare sotto
+            # la soglia.
+            how_falls=f"cade se la durata del gesto è sotto {int(SOGLIA_GESTO_LENTO)}s",
         )
+        testo = texts.SANTUARIO_EXIT_LENTA if lento else texts.SANTUARIO_EXIT_VELOCE
         await update.message.reply_text(
-            texts.SANTUARIO_EXIT,
+            testo.format(secondi=int(durata)),
             parse_mode=ParseMode.MARKDOWN,
         )
+        context.user_data.pop("candela_t0", None)
+        context.user_data.pop("candela_tentativi", None)
         return ConversationHandler.END
     await update.message.reply_text(
         "Scrivi *esco* o /esci quando vuoi uscire.",
@@ -264,22 +318,59 @@ async def azione_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ActionState.WAITING_DESCRIPTION
 
 
-async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
+NESSUNA_VERIFICA = {"nessuno", "nessuna", "niente", "-", "no", "nulla"}
+
+
+async def azione_descrizione(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = (update.message.text or "").strip()
     if not text or text.startswith("/"):
         await update.message.reply_text("Descrivi l'azione concreta e verificabile.")
         return ActionState.WAITING_DESCRIPTION
 
-    aid = db.add_action(update.effective_user.id, text)
+    context.user_data["azione_descrizione"] = text
+    await update.message.reply_text(
+        texts.AZIONE_VERIFICA_PROMPT,
+        parse_mode=ParseMode.MARKDOWN,
+    )
+    return ActionState.WAITING_VERIFICA
+
+
+async def azione_save(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Salva l'azione con la verifica esterna, o dichiaratamente senza."""
+    risposta = (update.message.text or "").strip()
+    if risposta.startswith("/"):
+        await update.message.reply_text(
+            "Scrivi chi può controllarla, oppure *nessuno*.",
+            parse_mode=ParseMode.MARKDOWN,
+        )
+        return ActionState.WAITING_VERIFICA
+
+    descrizione = context.user_data.pop("azione_descrizione", "").strip()
+    if not descrizione:
+        await update.message.reply_text("Ricominciamo: /azione")
+        return ConversationHandler.END
+
+    verificabile = bool(risposta) and risposta.lower() not in NESSUNA_VERIFICA
+    verifica = risposta if verificabile else None
+
+    aid = db.add_action(update.effective_user.id, descrizione, verifica)
     db.add_epistemic(
         update.effective_user.id,
         "TECNICO",
-        text,
+        descrizione if verificabile else f"{descrizione} [senza verifica esterna]",
         source="azione",
-        how_falls="cade se un terzo non può controllare che sia accaduta",
+        how_falls=(
+            f"cade se {verifica} non può confermare che sia accaduta"
+            if verificabile
+            else "non falsificabile da qui: nessun terzo dichiarato (P5)"
+        ),
+    )
+    modello = (
+        texts.AZIONE_SALVATA_VERIFICABILE if verificabile
+        else texts.AZIONE_SALVATA_NON_VERIFICABILE
     )
     await update.message.reply_text(
-        f"Azione registrata nello *strato tecnico* (id {aid}).\n\nÈ un dato. Qualcun altro potrebbe, in linea di principio, verificarla.\nGrazie per non aver finto.",
+        modello.format(id=aid, verifica=verifica or ""),
         parse_mode=ParseMode.MARKDOWN,
     )
     return ConversationHandler.END
@@ -407,6 +498,9 @@ def build_conversation_handlers():
         entry_points=[CommandHandler("azione", azione_entry)],
         states={
             ActionState.WAITING_DESCRIPTION: [
+                MessageHandler(filters.TEXT & ~filters.COMMAND, azione_descrizione),
+            ],
+            ActionState.WAITING_VERIFICA: [
                 MessageHandler(filters.TEXT & ~filters.COMMAND, azione_save),
             ],
         },

@@ -20,6 +20,11 @@ PERSISTENCE_PATH = os.getenv(
     "PERSISTENCE_PATH", str(BASE_DIR / "protocollo.persistence")
 )
 CONVERSATION_TIMEOUT = int(os.getenv("CONVERSATION_TIMEOUT", "1800"))
+
+# Sotto questa soglia il gesto della candela non e' stato compiuto per intero.
+# Il Capitolo 4 dice che quel gesto serve a costringere la mano alla lentezza:
+# senza una misura, il Santuario descrive il gesto invece di richiederlo.
+SOGLIA_GESTO_LENTO = float(os.getenv("SOGLIA_GESTO_LENTO", "20"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 
