@@ -39,27 +39,14 @@ logging.basicConfig(
 logger = logging.getLogger("protocollo")
 
 COMMANDS = [
-    BotCommand("start", "Ingresso nel protocollo"),
-    BotCommand("tesi", "La tesi grande (IPOTESI + P6)"),
-    BotCommand("strati", "I due strati e le etichette"),
-    BotCommand("p5p6", "Le due leggi"),
-    BotCommand("libro", "Il Protocollo per intero, a pagine"),
-    BotCommand("scacchiera", "Quindici case UNKNOWN"),
-    BotCommand("santuario", "Esperienza guidata del Santuario"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
-    BotCommand("esito", "Registra la risposta del terzo (sì / no / non visto)"),
+    BotCommand("esito", "La risposta del terzo"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
-    BotCommand("sdq", "Nucleo locale: etichetta un testo"),
-    BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
-    BotCommand("lista", "Rivedi le tue possibilità"),
-    BotCommand("registro", "Registro epistemico (strati + P6)"),
-    BotCommand("stato", "Conteggi tecnici del diario"),
-    BotCommand("azione", "Registra un’azione verificabile"),
-    BotCommand("veli", "Dissolvi uno dei tre veli"),
-    BotCommand("etichetta", "Colloca un’affermazione negli strati"),
-    BotCommand("aiuto", "Elenco comandi"),
-    BotCommand("ping", "Verifica se il processo è vivo"),
-    BotCommand("annulla", "Esci da un flusso in corso"),
+    BotCommand("azione", "Registra un atto verificabile"),
+    BotCommand("libro", "Il Protocollo a pagine"),
+    BotCommand("aiuto", "Le tre cose che contano"),
+    BotCommand("ping", "Il processo è vivo"),
+    BotCommand("annulla", "Esci da un flusso"),
 ]
 
 
@@ -76,7 +63,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.0", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.1", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -129,10 +116,10 @@ async def post_init(application: Application) -> None:
     await application.bot.delete_webhook(drop_pending_updates=False)
     await application.bot.set_my_commands(COMMANDS)
     await application.bot.set_my_description(
-        "Protocollo Rosso Rosso Rosso — tenere aperta una possibilità "
-        "senza spacciarla per un fatto, poi fare una cosa vera."
+        "Tenere aperta una possibilità senza spacciarla per un fatto. "
+        "Poi una cosa vera, che un altro possa vedere."
     )
-    await application.bot.set_my_short_description("Protocollo Rosso · R³∞ · IPOTESI, non fede")
+    await application.bot.set_my_short_description("Protocollo Rosso · uscire, non catalogare")
     me = await application.bot.get_me()
     logger.info("Collegato come @%s. Polling.", me.username)
 
