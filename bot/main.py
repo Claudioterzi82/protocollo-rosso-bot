@@ -19,6 +19,7 @@ from bot.scacchiera_flow import (
     build_scacchiera_conversation,
     scacchiera_command_handlers,
 )
+from bot.terzo import build_terzo_conversations
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -35,6 +36,8 @@ COMMANDS = [
     BotCommand("libro", "Il Protocollo per intero, a pagine"),
     BotCommand("scacchiera", "Quindici case UNKNOWN"),
     BotCommand("santuario", "Esperienza guidata del Santuario"),
+    BotCommand("testimone", "Un atto che un terzo può vedere"),
+    BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
     BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
     BotCommand("lista", "Rivedi le tue possibilità"),
     BotCommand("registro", "Registro epistemico (strati + P6)"),
@@ -53,7 +56,7 @@ class _Health(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"ok protocollo-rosso-bot 1.3.1")
+        self.wfile.write(b"ok protocollo-rosso-bot 1.4.0")
 
     def do_HEAD(self) -> None:
         self.send_response(200)
@@ -103,6 +106,8 @@ def build_application() -> Application:
     )
     app.add_handler(build_libro_conversation())
     app.add_handler(build_scacchiera_conversation())
+    for h in build_terzo_conversations():
+        app.add_handler(h)
     for h in build_conversation_handlers():
         app.add_handler(h)
     for h in build_command_handlers():
