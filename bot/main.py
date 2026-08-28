@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -46,6 +47,7 @@ COMMANDS = [
     BotCommand("scacchiera", "Quindici case UNKNOWN"),
     BotCommand("santuario", "Esperienza guidata del Santuario"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
+    BotCommand("esito", "Registra la risposta del terzo (sì / no / non visto)"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
     BotCommand("sdq", "Nucleo locale: etichetta un testo"),
     BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
@@ -74,7 +76,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.5.0", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.0", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -119,7 +121,7 @@ async def cmd_sdq(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not testo:
         await update.message.reply_text("Uso: /sdq <testo>\nNucleo locale, zero agenti.")
         return
-    out = sdq1.ask(testo)
+    out = await asyncio.to_thread(sdq1.ask, testo)
     await update.message.reply_text(out["risposta"][:3900])
 
 
