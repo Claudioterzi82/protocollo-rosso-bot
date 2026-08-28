@@ -38,14 +38,10 @@ class LibroState(IntEnum):
     WAITING_PAGE = 70
 
 
-SANT_SILENZIO = SanctuaryState.SILENCE
-SANT_CREPUSCOLO = SanctuaryState.LIGHT
-SANT_COLONNE = SanctuaryState.LIGHT
-SANT_LIBRO = SanctuaryState.ALTAR
-SANT_CANDELA = SanctuaryState.CANDLE
-SANT_USCITA = SanctuaryState.CANDLE
-SANT_ESCI = SanctuaryState.CANDLE
-OPEN_WAIT_TEXT = PossibilityState.WAITING_TEXT
-ACT_WAIT_TEXT = ActionState.WAITING_DESCRIPTION
-VEIL_CHOOSE = VeloState.WAITING_CHOICE
-LABEL_WAIT = EtichettaState.WAITING_TEXT
+class TestimoneState(IntEnum):
+    WAITING_CHI = 80
+    WAITING_ATTO = 81
+
+
+class FuoriState(IntEnum):
+    WAITING_ATTO = 90
