@@ -1,11 +1,13 @@
-"""Il pezzo che mancava: un terzo, fuori da questa chat.
-
-P5: il bot che conferma l'utente non conferma nulla.
-P6: se nessuno può vedere l'atto, l'atto non è nello strato tecnico.
-"""
+"""Il pezzo che mancava: un terzo, fuori da questa chat."""
 
 from telegram import Update
-from telegram.ext import CommandHandler, ContextTypes, ConversationHandler, MessageHandler, filters
+from telegram.ext import (
+    CommandHandler,
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters,
+)
 
 from bot.config import CONVERSATION_TIMEOUT
 from bot import db
