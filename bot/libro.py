@@ -1,19 +1,19 @@
-"""Protocollo Rosso Rosso Rosso v2.0 — testo del libro, a pagine Telegram.
-
-Fonte: Drive dell'autore, 23 agosto 2026.
-Nota editoriale pre-pubblicazione esclusa.
-© Claudio Terzi [CT-LGAI-001].
-"""
+"""Protocollo Rosso Rosso Rosso v2.0 — testo del libro, a pagine Telegram."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-_SOURCE = Path(__file__).with_name("libro_pagine.txt")
+_DIR = Path(__file__).resolve().parent
 
 
 def _carica() -> list[tuple[str, str]]:
-    raw = _SOURCE.read_text(encoding="utf-8")
+    raw = ""
+    for name in ("libro_pagine_a.txt", "libro_pagine_b.txt"):
+        p = _DIR / name
+        if p.exists():
+            piece = p.read_text(encoding="utf-8").strip("\n")
+            raw = piece if not raw else raw + "\n=======\n" + piece
     pagine: list[tuple[str, str]] = []
     for blocco in raw.split("\n=======\n"):
         blocco = blocco.strip("\n")
@@ -36,12 +36,11 @@ def indice() -> str:
 
 
 def pagina(i: int) -> tuple[int, str]:
-    n = len(PAGINE)
+    n = max(len(PAGINE), 1)
     i = max(0, min(i, n - 1))
+    if not PAGINE:
+        return 0, "Libro non caricato."
     titolo, corpo = PAGINE[i]
     coda = f"\n\n— {i}/{n - 1} · {titolo}"
-    if i < n - 1:
-        coda += "\nScrivi avanti"
-    else:
-        coda += "\nFine del libro. /azione"
+    coda += "\nScrivi avanti" if i < n - 1 else "\nFine del libro. /azione"
     return i, corpo + coda
