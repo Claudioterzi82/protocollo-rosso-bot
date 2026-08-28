@@ -29,6 +29,16 @@ FUORI_PROMPT = (
     "Se non l'hai ancora fatta, scrivi quella che farai prima di sera."
 )
 
+ESITI = {
+    "si": "VISTO",
+    "sì": "VISTO",
+    "visto": "VISTO",
+    "no": "NEGATO",
+    "non visto": "NON_VISTO",
+    "non ho visto": "NON_VISTO",
+    "non_visto": "NON_VISTO",
+}
+
 
 async def testimone_entry(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await db.ensure_user(
@@ -58,6 +68,7 @@ async def testimone_atto(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chi = context.user_data.get("testimone_chi") or "un terzo"
     testo = f"testimone={chi} | {atto}"
     aid = db.add_action(update.effective_user.id, testo)
+    tid = db.add_testimone(update.effective_user.id, chi, atto)
     db.add_epistemic(
         update.effective_user.id,
         "TECNICO",
@@ -69,7 +80,9 @@ async def testimone_atto(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"Da incollare a {chi}, se vuoi:\n\n"
         f"«Non ti chiedo di capire il bot. Ti chiedo se vedi questa cosa: {atto}. "
         f"Se non la vedi, il protocollo qui ha fallito.»\n\n"
-        f"Registrato nello strato tecnico (id {aid}). "
+        f"Registrato nello strato tecnico (id {aid}, testimone #{tid}).\n"
+        f"Quando {chi} risponde, chiudi il giro con:\n"
+        f"/esito {tid} sì   ·   /esito {tid} no   ·   /esito {tid} non visto\n\n"
         f"Il bot non l'ha mandata al posto tuo. Tocca a te uscire."
     )
     await update.message.reply_text(biglietto)
@@ -106,6 +119,65 @@ async def terzo_cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
+async def cmd_esito(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    args = context.args or []
+    if not args:
+        aperti = db.list_testimoni(update.effective_user.id, solo_aperti=True)
+        if not aperti:
+            await update.message.reply_text(
+                "Nessun testimone in attesa. Il giro è chiuso, o mai aperto."
+            )
+            return
+        righe = ["Testimoni in attesa di risposta:"]
+        for t in aperti:
+            righe.append(f"#{t['id']} — {t['chi']}: {t['atto'][:60]}")
+        righe.append("\nChiudi con: /esito <id> sì · no · non visto")
+        await update.message.reply_text("\n".join(righe))
+        return
+    try:
+        tid = int(args[0].lstrip("#"))
+    except ValueError:
+        await update.message.reply_text("Uso: /esito <id> sì · no · non visto")
+        return
+    parola = " ".join(args[1:]).strip().lower()
+    esito = ESITI.get(parola)
+    if not esito:
+        await update.message.reply_text(
+            f"«{parola or '…'}» non è un esito. Vale: sì · no · non visto"
+        )
+        return
+    t = db.get_testimone(update.effective_user.id, tid)
+    if not t:
+        await update.message.reply_text(
+            f"Testimone #{tid} non trovato. /esito senza argomenti elenca gli aperti."
+        )
+        return
+    if t["esito"]:
+        await update.message.reply_text(
+            f"#{tid} è già chiuso: {t['esito']}. Un esito non si riscrive."
+        )
+        return
+    db.set_esito_testimone(update.effective_user.id, tid, esito)
+    if esito == "VISTO":
+        chiusura = "P5 rispettata su questo atto: non hai parlato due volte."
+    elif esito == "NEGATO":
+        chiusura = "L'atto è caduto. Resta scritto che è caduto — il registro non lo nasconde (P6)."
+    else:
+        chiusura = "Non visto non è falso: è non verificato. Resta aperto il fatto, chiuso il giro."
+    db.add_epistemic(
+        update.effective_user.id,
+        "TECNICO",
+        f"esito testimone #{tid} ({t['chi']}): {esito} su «{t['atto'][:120]}»",
+        source="esito-testimone",
+        how_falls="riportato da te: il bot non può verificare la parola del terzo",
+    )
+    await update.message.reply_text(
+        f"Registrato: {t['chi']} → {esito}.\n{chiusura}\n\n"
+        "Nota onesta: l'esito è la tua parola sulla sua parola. "
+        "Il bot registra, non verifica."
+    )
+
+
 def build_terzo_conversations():
     testimone = ConversationHandler(
         entry_points=[CommandHandler("testimone", testimone_entry)],
@@ -134,4 +206,4 @@ def build_terzo_conversations():
         persistent=True,
         conversation_timeout=CONVERSATION_TIMEOUT,
     )
-    return [testimone, fuori]
+    return [testimone, fuori, CommandHandler("esito", cmd_esito)]
