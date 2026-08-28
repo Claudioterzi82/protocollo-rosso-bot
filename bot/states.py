@@ -34,7 +34,10 @@ class ScacchieraState(IntEnum):
     WAITING_CASA = 60
 
 
-# Alias numerici conservati per compatibilità con note precedenti
+class LibroState(IntEnum):
+    WAITING_PAGE = 70
+
+
 SANT_SILENZIO = SanctuaryState.SILENCE
 SANT_CREPUSCOLO = SanctuaryState.LIGHT
 SANT_COLONNE = SanctuaryState.LIGHT
