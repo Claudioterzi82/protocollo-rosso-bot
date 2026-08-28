@@ -23,6 +23,7 @@ from telegram.ext import (
 from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
 from bot.db import init_db
 from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown, messaggio_libero
+from bot.menu_rrr import CHIUDI, cmd_chiudi_menu, cmd_rrr
 from bot.scacchiera_flow import (
     build_libro_conversation,
     build_scacchiera_conversation,
@@ -39,6 +40,7 @@ logging.basicConfig(
 logger = logging.getLogger("protocollo")
 
 COMMANDS = [
+    BotCommand("rrr", "Sottomenu con tutti i comandi"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
     BotCommand("esito", "La risposta del terzo"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
@@ -63,7 +65,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.1", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.2", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -143,9 +145,11 @@ def build_application() -> Application:
         app.add_handler(h)
     for h in build_command_handlers():
         app.add_handler(h)
+    app.add_handler(CommandHandler("rrr", cmd_rrr))
     app.add_handler(CommandHandler("sdq", cmd_sdq))
     for h in scacchiera_command_handlers():
         app.add_handler(h)
+    app.add_handler(MessageHandler(filters.Regex(f"^{CHIUDI}$"), cmd_chiudi_menu))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, messaggio_libero))
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
     app.add_error_handler(on_error)
