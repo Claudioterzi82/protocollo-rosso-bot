@@ -28,12 +28,8 @@ async def cmd_rrr(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     )
 
 
-async def chiudi_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
-    testo = (update.message.text or "").strip()
-    if testo != CHIUDI:
-        return False
+async def cmd_chiudi_menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
         "Menu chiuso. /rrr per riaprirlo.",
         reply_markup=ReplyKeyboardRemove(),
     )
-    return True
