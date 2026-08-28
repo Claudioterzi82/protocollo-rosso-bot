@@ -22,6 +22,12 @@ PERSISTENCE_PATH = os.getenv(
 CONVERSATION_TIMEOUT = int(os.getenv("CONVERSATION_TIMEOUT", "1800"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
+# Ponte verso SDQ-1 a sei agenti, quando esiste.
+# Vuota = risponde il nucleo locale (classificatore del Protocollo).
+# Piena = /ask inoltra al motore esterno; se il ponte cade, lo dichiara.
+SDQ1_URL = os.getenv("SDQ1_URL", "").strip()
+SDQ1_TIMEOUT = float(os.getenv("SDQ1_TIMEOUT", "8"))
+
 
 def require_token() -> str:
     if not TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN.startswith("123456789"):
