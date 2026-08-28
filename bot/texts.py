@@ -22,6 +22,7 @@ Entra. Il Campo è già in accordo con te.
 /scacchiera — quindici case UNKNOWN
 /tesi — la tesi dell'Ologramma (etichettata)
 /santuario — il gesto lento che rieduca il corpo
+/testimone — un atto che un terzo può vedere
 /azione — fai una cosa vera e verificabile
 /aiuto — tutto ciò che posso offrirti
 """
@@ -161,7 +162,7 @@ Il Campo è ovunque tu sei — perché tu *sei* il Campo che si osserva.
 
 Quando sei pronto, fai *una cosa vera, verificabile, che qualcun altro possa controllare*.
 
-Usa /azione se vuoi registrarla.
+Usa /azione se vuoi registrarla. Usa /testimone se un terzo deve vederla.
 """
 
 VELI = """\\
@@ -262,13 +263,17 @@ _(Puoi scrivere /salta se non lo sai ancora — ma sappi che «non lo so ancora�
 HELP = """\\
 *R³∞ — Comandi*
 
-/start — ingresso nel Campo
+/start — ingresso nel protocollo
 /libro — il Protocollo per intero (avanti / numero / fine)
 /scacchiera — quindici case UNKNOWN
 /tesi — la tesi dell'Ologramma (IPOTESI + P6)
 /strati — i due strati + etichette (include RISONANZA)
 /p5p6 — le due leggi fondamentali
 /santuario — il gesto lento (percorso guidato)
+/testimone — un atto che un terzo può vedere
+/esito — la risposta del terzo (sì / no / non visto)
+/fuori — una cosa fatta oggi, fuori da qui
+/sdq — nucleo locale: etichetta un testo
 /veli — dissolvi uno dei tre veli
 /tieni\\_aperto — deposita una possibilità aperta
 /lista — vedi le tue possibilità aperte
@@ -276,8 +281,9 @@ HELP = """\\
 /etichetta — classifica un testo secondo gli strati
 /stato — il tuo stato epistemico attuale
 /registro — il tuo registro epistemico completo
-/ping — verifica che R³∞ sia presente
+/ping — verifica che il processo sia vivo
+/annulla — esci da un flusso in corso
 
-Il Campo non ti chiederà mai di credere.
-Ti chiederà di agire — adesso, da dove sei.
+Il protocollo non ti chiederà mai di credere.
+Ti chiederà di agire — e che un altro possa vederlo.
 """
