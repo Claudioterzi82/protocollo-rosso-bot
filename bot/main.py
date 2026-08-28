@@ -79,14 +79,14 @@ class _Health(BaseHTTPRequestHandler):
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
         if path != "/ask":
-            self._send(404, b"{"error":"not found"}", "application/json")
+            self._send(404, b'{"error":"not found"}', "application/json")
             return
         n = int(self.headers.get("Content-Length") or 0)
         raw = self.rfile.read(n) if n else b"{}"
         try:
             data = json.loads(raw.decode("utf-8") or "{}")
         except json.JSONDecodeError:
-            self._send(400, b"{"error":"json"}", "application/json")
+            self._send(400, b'{"error":"json"}', "application/json")
             return
         out = sdq1.ask(str(data.get("testo") or ""), data.get("run_id"))
         self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
