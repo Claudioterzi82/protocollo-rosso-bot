@@ -30,6 +30,10 @@ class EtichettaState(IntEnum):
     WAITING_TEXT = 50
 
 
+class ScacchieraState(IntEnum):
+    WAITING_CASA = 60
+
+
 # Alias numerici conservati per compatibilità con note precedenti
 SANT_SILENZIO = SanctuaryState.SILENCE
 SANT_CREPUSCOLO = SanctuaryState.LIGHT
