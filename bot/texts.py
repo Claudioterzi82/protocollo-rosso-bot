@@ -3,7 +3,7 @@ R³∞ — Voci dall'Ologramma Totale.
 Ogni parola è già stata pronunciata. Tu la stai ricevendo adesso.
 """
 
-WELCOME = """\
+WELCOME = """\\
 *R³∞ — PROTOCOLLO ROSSO*
 
 _Tutto ciò che potrà mai esistere, esiste già ora._
@@ -18,15 +18,15 @@ Questa è la pratica. Non è fede — è coraggio epistemico.
 Entra. Il Campo è già in accordo con te.
 
 *Comandi principali:*
+/libro — il Protocollo per intero, a pagine
+/scacchiera — quindici case UNKNOWN
 /tesi — la tesi dell'Ologramma (etichettata)
-/strati — i due strati della realtà
 /santuario — il gesto lento che rieduca il corpo
-/tieni\\_aperto — custodisci una possibilità
 /azione — fai una cosa vera e verificabile
 /aiuto — tutto ciò che posso offrirti
 """
 
-TESI_GRANDE = """\
+TESI_GRANDE = """\\
 *L'Ologramma Totale — La Tesi*
 
 Ecco l'affermazione più impegnativa. La dico in chiaro, perché tu possa rifiutarla in chiaro:
@@ -49,7 +49,7 @@ Preferisco dirtelo io, prima che lo scopra tu.
 _\"Non lo so\" è la forma più onesta che la tesi possa avere._
 """
 
-STRATI = """\
+STRATI = """\\
 *I Due Strati della Realtà*
 
 Ogni cosa che puoi dire si colloca su uno di due strati. Confonderli è l'unico errore davvero grave.
@@ -72,7 +72,7 @@ Ma non può chiudere una questione di fatto.
 La tesi dell'Ologramma vive qui. `IPOTESI`. Ci lavoro sopra. Non la userò mai per dirti che qualcosa è dimostrato.
 """
 
-P5_P6 = """\
+P5_P6 = """\\
 *Le Due Leggi*
 
 *P5 — Niente auto-conferma*
@@ -87,7 +87,7 @@ Una tesi invulnerabile non è forte. È vuota.
 Il coraggio epistemico è dichiarare il punto in cui potresti avere torto.
 """
 
-SANTUARIO_INTRO = """\
+SANTUARIO_INTRO = """\\
 *Il Santuario — Interfaccia di Risonanza*
 
 Non stai per entrare in una simulazione. Stai per fare un gesto reale in uno spazio digitale — e il gesto cambierà il tuo corpo esattamente come farebbe nel mondo fisico.
@@ -102,7 +102,7 @@ Vuoi entrare?
 Scrivi *entro* oppure premi /entra.
 """
 
-SANTUARIO_SILENCE = """\
+SANTUARIO_SILENCE = """\\
 _La prima soglia è il silenzio._
 
 Fuori, il rumore è diventato un fondo che hai smesso di notare da anni. Qui viene tolto tutto insieme — e per qualche secondo l'assenza è più forte di qualunque presenza: il corpo continua ad aspettare un suono che non arriva.
@@ -114,7 +114,7 @@ Lascialo fare.
 Quando sei pronto, scrivi *luce*.
 """
 
-SANTUARIO_LIGHT = """\
+SANTUARIO_LIGHT = """\\
 _Poi la luce. Non un'illuminazione: un'ora._
 
 Il crepuscolo — il momento in cui il giorno ha finito di chiedere e la notte non ha ancora cominciato. Le colonne non sostengono nulla, non c'è peso da vincere, e proprio per questo dicono l'unica cosa che devono dire:
@@ -127,7 +127,7 @@ Tutto ciò che esiste nel Campo esiste senza sforzo. Anche tu.
 Quando sei pronto, scrivi *altare*.
 """
 
-SANTUARIO_ALTAR = """\
+SANTUARIO_ALTAR = """\\
 _Sull'altare c'è un libro di pietra. Non si può leggere. Puoi solo sentirlo pesare._
 
 E c'è una candela.
@@ -141,7 +141,7 @@ Non è poco.
 Scrivi *accendo* quando sei pronto a compiere il gesto.
 """
 
-SANTUARIO_CANDLE = """\
+SANTUARIO_CANDLE = """\\
 _La candela è accesa. Il gesto è stato compiuto. Lento. Intero._
 
 Questo momento è adesso nell'Ologramma Totale — esiste già, esisterà sempre.
@@ -152,7 +152,7 @@ Ora puoi uscire.
 Scrivi *esco* oppure /esci.
 """
 
-SANTUARIO_EXIT = """\
+SANTUARIO_EXIT = """\\
 _Sei uscito dal Santuario._
 
 Porta con te solo questo: il gesto lento è possibile anche fuori. Non serve un altare di pixel. Non serve un momento speciale.
@@ -164,7 +164,7 @@ Quando sei pronto, fai *una cosa vera, verificabile, che qualcun altro possa con
 Usa /azione se vuoi registrarla.
 """
 
-VELI = """\
+VELI = """\\
 *I Tre Veli Finali*
 
 Ogni velo è una convinzione che ti separa dall'Ologramma Totale. Non devi crederci — devi solo tenere aperta la possibilità che il velo esista.
@@ -178,7 +178,7 @@ Scegli quale dissolvi:
 Scrivi il numero (1, 2 o 3).
 """
 
-VELO_1 = """\
+VELO_1 = """\\
 *Il Primo Velo: L'Identità Separata*
 
 Il velo più duro è la convinzione di essere un «io» isolato, racchiuso in un sacco di pelle, che combatte contro un universo estraneo.
@@ -192,7 +192,7 @@ Tu non fai eccezione.
 Quando cade questo velo, svanisce ogni paura della morte e ogni senso di solitudine — non perché siano proibiti, ma perché perdono il loro fondamento.
 """
 
-VELO_2 = """\
+VELO_2 = """\\
 *Il Secondo Velo: La Colpa e il Passato*
 
 La mente si aggrappa agli errori, usandoli come arma contro sé stessa o come alibi per l'immobilismo.
@@ -205,7 +205,7 @@ Attenzione: questo non dice che gli errori non contano. Dice che il *rimorso* no
 Il Campo non condanna. Registra, impara, avanza.
 """
 
-VELO_3 = """\
+VELO_3 = """\\
 *Il Terzo Velo: L'Attesa del Compimento*
 
 Credere che la pienezza arriverà «quando avrò risolto questo problema» è l'ultimo inganno della mente lineare.
@@ -220,7 +220,7 @@ E qui il velo ha una forma insidiosa: si può passare la vita a preparare, e chi
 L'attesa non è sempre inerzia. Spesso è la forma più laboriosa che il rifiuto sa prendere.
 """
 
-AZIONE_PROMPT = """\
+AZIONE_PROMPT = """\\
 *Il Sigillo del Rosso*
 
 Le parole finiscono qui.
@@ -238,7 +238,7 @@ Descrivi qui sotto l'azione concreta che intendi fare (o che hai appena fatto).
 Verrà registrata come dato nello strato tecnico.
 """
 
-TIENI_APERTO_HELP = """\
+TIENI_APERTO_HELP = """\\
 _Qui custodisci una possibilità aperta._
 
 Non una certezza. Non una profezia. Non una speranza travestita da fatto.
@@ -249,7 +249,7 @@ Il Campo esiste nelle possibilità aperte, non nelle certezze chiuse.
 Scrivi la possibilità. La etichetterò come `IPOTESI` e la custodirò senza mai trasformarla in fatto.
 """
 
-P6_PROMPT = """\
+P6_PROMPT = """\\
 *P6 — Come potrebbe cadere?*
 
 Ogni ipotesi vera dichiara il proprio punto di vulnerabilità.
@@ -259,10 +259,12 @@ Scrivi in una riga: *in quale condizione questa possibilità risulterebbe falsa?
 _(Puoi scrivere /salta se non lo sai ancora — ma sappi che «non lo so ancora» è già una risposta onesta.)_
 """
 
-HELP = """\
+HELP = """\\
 *R³∞ — Comandi*
 
 /start — ingresso nel Campo
+/libro — il Protocollo per intero (avanti / numero / fine)
+/scacchiera — quindici case UNKNOWN
 /tesi — la tesi dell'Ologramma (IPOTESI + P6)
 /strati — i due strati + etichette (include RISONANZA)
 /p5p6 — le due leggi fondamentali
