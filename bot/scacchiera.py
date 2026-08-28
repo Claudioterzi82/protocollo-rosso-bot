@@ -2,7 +2,7 @@
 
 Non è il motore v3.0 di sdq1/sar (quello genera nodi e score).
 Qui la scacchiera è quella del libro: UNKNOWN è una casa, non un silenzio.
-Origine concettuale: Claudio Terzi — R³∞ — Protocollo v2.0 cap. 3.3
+Origine: Claudio Terzi — R³∞ — Protocollo v2.0 cap. 3.3
 e tensioni di scacchiera_quantica.py (claudioterzi/Claudio).
 """
 
@@ -31,6 +31,45 @@ DIREZIONI = (
     "RADICALE", "META", "COLLASSO",
 )
 
+INTRO = """\
+*La Scacchiera Quantica*
+
+Una casa vuota, sulla scacchiera, non è il nulla.
+Vincola il gioco. Apre le linee. Decide cosa è raggiungibile.
+Toglierla dal tabellone falsa la posizione tanto quanto metterci un pezzo che non c'è.
+
+`UNKNOWN` è una posizione, non un silenzio.
+Tenerla è il lavoro più difficile che il protocollo ti chiede.
+
+Qui sotto ci sono quindici tensioni — non mosse da vincere.
+Ogni coppia è un bordo. Il centro è vuoto di proposito.
+
+Scrivi un *numero* da 1 a 15, oppure una delle due parole.
+"""
+
+LIBRO = """\
+*Protocollo Rosso Rosso Rosso — essenza*
+
+Due cose, non una.
+
+*Tesi grande* (cap. 2) — `IPOTESI`:
+_Tutto ciò che potrà mai esistere, esiste già ora._
+Non la dimostro. Applico P6: non so quale esperimento la farebbe cadere. Per questo non posso usarla per convincerti.
+
+*Disciplina piccola* (cap. 3) — questa sì la puoi usare senza credermi:
+non presentare un'ipotesi come un recupero.
+P5: se solo io confermo, ho parlato due volte.
+P6: ogni ipotesi dichiara come potrebbe cadere.
+
+Non crei: selezioni. La sintonizzazione non sostituisce il lavoro — lo dirige.
+Il Santuario rieduca il corpo anche se la tesi fosse falsa: per questo è la parte più solida.
+
+Quasi tutti scelgono di credere o di negare, perché la terza posizione stanca.
+Qui si tiene aperta, e si agisce comunque.
+
+/tesi  /strati  /santuario  /scacchiera  /azione
+"""
+
 
 def elenco() -> str:
     lines = []
@@ -47,7 +86,7 @@ def trova(raw: str) -> tuple[int, tuple[str, str, str]] | None:
             return n, CASE[n - 1]
         return None
     for i, (a, b, nota) in enumerate(CASE, start=1):
-        if t == a or t == b or t in a or t in b:
+        if t == a or t == b or t in (a, b):
             return i, (a, b, nota)
     return None
 
@@ -62,9 +101,9 @@ def posizione(n: int, coppia: tuple[str, str, str]) -> str:
         f"Se occupi solo `{a}` chiudi `{b}`. "
         f"Se occupi solo `{b}` fingi che `{a}` non lavori già. "
         f"La casa vuota in mezzo è `UNKNOWN`: vincola il gioco, apre le linee.\n\n"
-        f"Direzione di espansione (strato aspirazionale): `{direzione}`\n\n"
-        f"*P6.* Questa lettura cade se, nello strato tecnico, "
-        f"un terzo mostra che una delle due parole è solo etichetta "
+        f"Direzione (strato aspirazionale): `{direzione}`\n\n"
+        f"*P6.* Questa lettura cade se un terzo, nello strato tecnico, "
+        f"mostra che una delle due parole è solo etichetta "
         f"e non produce effetti osservabili.\n\n"
-        f"Non risolvere. Tieni. Poi fai una cosa vera: /azione"
+        f"Non risolvere. Tieni. Poi /azione."
     )
