@@ -13,7 +13,7 @@ from telegram.ext import Application, ContextTypes, MessageHandler, PicklePersis
 
 from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
 from bot.db import init_db
-from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown
+from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown, messaggio_libero
 
 logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -46,7 +46,7 @@ class _Health(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", "text/plain; charset=utf-8")
         self.end_headers()
-        self.wfile.write(b"ok protocollo-rosso-bot 1.1.0")
+        self.wfile.write(b"ok protocollo-rosso-bot 1.2.1")
 
     def do_HEAD(self) -> None:
         self.send_response(200)
@@ -98,6 +98,7 @@ def build_application() -> Application:
         app.add_handler(h)
     for h in build_command_handlers():
         app.add_handler(h)
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, messaggio_libero))
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
     app.add_error_handler(on_error)
     return app
