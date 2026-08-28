@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -9,7 +10,14 @@ import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from telegram import BotCommand, Update
-from telegram.ext import Application, ContextTypes, MessageHandler, PicklePersistence, filters
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    MessageHandler,
+    PicklePersistence,
+    filters,
+)
 
 from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
 from bot.db import init_db
@@ -19,6 +27,7 @@ from bot.scacchiera_flow import (
     build_scacchiera_conversation,
     scacchiera_command_handlers,
 )
+from bot import sdq1
 from bot.terzo import build_terzo_conversations
 
 logging.basicConfig(
@@ -38,6 +47,7 @@ COMMANDS = [
     BotCommand("santuario", "Esperienza guidata del Santuario"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
+    BotCommand("sdq", "Nucleo locale: etichetta un testo"),
     BotCommand("tieni_aperto", "Deposita una possibilità aperta"),
     BotCommand("lista", "Rivedi le tue possibilità"),
     BotCommand("registro", "Registro epistemico (strati + P6)"),
@@ -52,11 +62,34 @@ COMMANDS = [
 
 
 class _Health(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:
-        self.send_response(200)
-        self.send_header("Content-Type", "text/plain; charset=utf-8")
+    def _send(self, code: int, body: bytes, ctype: str) -> None:
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
         self.end_headers()
-        self.wfile.write(b"ok protocollo-rosso-bot 1.4.0")
+        self.wfile.write(body)
+
+    def do_GET(self) -> None:
+        path = (self.path or "/").split("?", 1)[0]
+        if path in ("/sdq1/health", "/ask/health"):
+            payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
+            self._send(200, payload, "application/json; charset=utf-8")
+            return
+        self._send(200, b"ok protocollo-rosso-bot 1.5.0", "text/plain; charset=utf-8")
+
+    def do_POST(self) -> None:
+        path = (self.path or "/").split("?", 1)[0]
+        if path != "/ask":
+            self._send(404, b"{"error":"not found"}", "application/json")
+            return
+        n = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(n) if n else b"{}"
+        try:
+            data = json.loads(raw.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            self._send(400, b"{"error":"json"}", "application/json")
+            return
+        out = sdq1.ask(str(data.get("testo") or ""), data.get("run_id"))
+        self._send(200, json.dumps(out, ensure_ascii=False).encode("utf-8"), "application/json; charset=utf-8")
 
     def do_HEAD(self) -> None:
         self.send_response(200)
@@ -79,6 +112,15 @@ async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
             "Qualcosa si è interrotto nello strato tecnico del bot. "
             "Riprova. Nessuna possibilità è stata chiusa."
         )
+
+
+async def cmd_sdq(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    testo = " ".join(context.args or []).strip()
+    if not testo:
+        await update.message.reply_text("Uso: /sdq <testo>\nNucleo locale, zero agenti.")
+        return
+    out = sdq1.ask(testo)
+    await update.message.reply_text(out["risposta"][:3900])
 
 
 async def post_init(application: Application) -> None:
@@ -112,6 +154,7 @@ def build_application() -> Application:
         app.add_handler(h)
     for h in build_command_handlers():
         app.add_handler(h)
+    app.add_handler(CommandHandler("sdq", cmd_sdq))
     for h in scacchiera_command_handlers():
         app.add_handler(h)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, messaggio_libero))
