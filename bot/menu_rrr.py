@@ -6,9 +6,9 @@ from telegram.ext import ContextTypes
 CHIUDI = "Chiudi menu"
 
 RIGHE = [
-    ["/metodo", "/etichetta", "/testimone"],
-    ["/esito", "/fuori", "/azione"],
-    ["/libro", "/scacchiera", "/santuario"],
+    ["/metodo", "/corpo", "/etichetta"],
+    ["/testimone", "/esito", "/fuori"],
+    ["/azione", "/libro", "/santuario"],
     ["/tesi", "/strati", "/p5p6"],
     ["/veli", "/tieni_aperto", "/registro"],
     ["/lista", "/stato", "/ping"],
