@@ -24,6 +24,7 @@ from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
 from bot.db import init_db
 from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown, messaggio_libero
 from bot.menu_rrr import CHIUDI, cmd_chiudi_menu, cmd_rrr
+from bot.metodo import cmd_metodo
 from bot.scacchiera_flow import (
     build_libro_conversation,
     build_scacchiera_conversation,
@@ -41,6 +42,7 @@ logger = logging.getLogger("protocollo")
 
 COMMANDS = [
     BotCommand("rrr", "Sottomenu con tutti i comandi"),
+    BotCommand("metodo", "Il ciclo: ipotesi, atto, esito"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
     BotCommand("esito", "La risposta del terzo"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
@@ -65,7 +67,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.2", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.3", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -121,7 +123,7 @@ async def post_init(application: Application) -> None:
         "Tenere aperta una possibilità senza spacciarla per un fatto. "
         "Poi una cosa vera, che un altro possa vedere."
     )
-    await application.bot.set_my_short_description("Protocollo Rosso · uscire, non catalogare")
+    await application.bot.set_my_short_description("Protocollo Rosso · bordo, non abitante")
     me = await application.bot.get_me()
     logger.info("Collegato come @%s. Polling.", me.username)
 
@@ -146,6 +148,7 @@ def build_application() -> Application:
     for h in build_command_handlers():
         app.add_handler(h)
     app.add_handler(CommandHandler("rrr", cmd_rrr))
+    app.add_handler(CommandHandler("metodo", cmd_metodo))
     app.add_handler(CommandHandler("sdq", cmd_sdq))
     for h in scacchiera_command_handlers():
         app.add_handler(h)
