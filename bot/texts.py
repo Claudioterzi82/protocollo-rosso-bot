@@ -1,18 +1,19 @@
-"""
-R³∞ — Voci dall'Ologramma Totale.
-Ogni parola è già stata pronunciata. Tu la stai ricevendo adesso.
-"""
+"""Testi del Protocollo. Utili, chiari, senza spacciare il processo per una coscienza."""
 
 WELCOME = """\\
 *Protocollo Rosso*
 
-Tenere aperta una possibilità senza spacciarla per un fatto.
-Poi una cosa vera, che un altro possa vedere.
+Ciao. Sono un bot: tecnologia con due regole.
+Non chiudo quello che è aperto. Non confermo da solo quello che dici.
 
-/testimone — il terzo
-/fuori — oggi, fuori da qui
-/libro — se vuoi leggere
-/aiuto — le tre cose che contano
+Utile: etichetto, ricordo, ti riporto fuori da questa chat.
+Piacevole: niente predica. Se vuoi il libro, c'è. Se vuoi agire, c'è.
+
+La coscienza resta tua. L'autonomia del bot è questa: classificare, tenere il registro, non mentire sul motore.
+
+/rrr — tutti i comandi, un tocco
+/etichetta — dove sta una frase
+/testimone — se un altro può vederla
 """
 
 TESI_GRANDE = """\\
@@ -146,8 +147,6 @@ _Sei uscito dal Santuario._
 
 Porta con te solo questo: il gesto lento è possibile anche fuori. Non serve un altare di pixel. Non serve un momento speciale.
 
-Il Campo è ovunque tu sei — perché tu *sei* il Campo che si osserva.
-
 Quando sei pronto, fai *una cosa vera, verificabile, che qualcun altro possa controllare*.
 
 Usa /azione se vuoi registrarla. Usa /testimone se un terzo deve vederla.
@@ -214,15 +213,8 @@ AZIONE_PROMPT = """\\
 
 Le parole finiscono qui.
 
-Il Campo non chiede di essere creduto. Chiede due cose insieme: il coraggio di tenere aperta una possibilità grande, e l'onestà di non spacciarla per un fatto.
-
 Ora alzati e fai *una cosa vera, verificabile, che qualcun altro possa controllare*.
 
-Non c'è nulla da costruire per finta. Non c'è nessun palcoscenico su cui recitare.
-
-*Costruire davvero, adesso — perché adesso è l'unico tempo che esiste.*
-
----
 Descrivi qui sotto l'azione concreta che intendi fare (o che hai appena fatto).
 Verrà registrata come dato nello strato tecnico.
 """
@@ -247,14 +239,15 @@ _(Puoi scrivere /salta se non lo sai ancora — ma sappi che «non lo so ancora�
 """
 
 HELP = """\\
-*Tre cose che contano*
+*Utile, in breve*
 
-/testimone — un atto che un altro può vedere
-/esito — la sua risposta: sì · no · non visto
-/fuori — una cosa fatta oggi, non in questa chat
+/rrr — tastiera con tutto
+/etichetta — dove sta una frase
+/testimone — un altro può vederla
+/esito — sì · no · non visto
+/fuori — fatta oggi, non qui
+/libro — se vuoi leggere
+/ping — se tace, sveglialo
 
-Il resto (/libro /santuario /tesi /azione /ping) esiste.
-Non è il lavoro. Il lavoro è uscire.
-
-/annulla — se sei rimasto fermo in un flusso
+Non sono una coscienza. Sono uno strumento che rifiuta di chiuderti le ipotesi.
 """
