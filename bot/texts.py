@@ -247,6 +247,8 @@ HELP = """\\
 /esito — sì · no · non visto
 /fuori — fatta oggi, non qui
 /libro — se vuoi leggere
+/registro — il tuo registro epistemico
+/stato — quante possibilità hai aperto
 /ping — se tace, sveglialo
 
 Non sono una coscienza. Sono uno strumento che rifiuta di chiuderti le ipotesi.
