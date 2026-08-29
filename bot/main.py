@@ -21,6 +21,7 @@ from telegram.ext import (
 )
 
 from bot.config import LOG_LEVEL, PERSISTENCE_PATH, require_token
+from bot.corpo import cmd_corpo, corpo_tasto
 from bot.db import init_db
 from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown, messaggio_libero
 from bot.menu_rrr import CHIUDI, cmd_chiudi_menu, cmd_rrr
@@ -43,6 +44,7 @@ logger = logging.getLogger("protocollo")
 COMMANDS = [
     BotCommand("rrr", "Sottomenu con tutti i comandi"),
     BotCommand("metodo", "Il ciclo: ipotesi, atto, esito"),
+    BotCommand("corpo", "Hacking onesto: sonno, luce, misura"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
     BotCommand("esito", "La risposta del terzo"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
@@ -67,7 +69,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.3", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.4", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -116,6 +118,12 @@ async def cmd_sdq(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(out["risposta"][:3900])
 
 
+async def on_testo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if await corpo_tasto(update, context):
+        return
+    await messaggio_libero(update, context)
+
+
 async def post_init(application: Application) -> None:
     await application.bot.delete_webhook(drop_pending_updates=False)
     await application.bot.set_my_commands(COMMANDS)
@@ -149,11 +157,12 @@ def build_application() -> Application:
         app.add_handler(h)
     app.add_handler(CommandHandler("rrr", cmd_rrr))
     app.add_handler(CommandHandler("metodo", cmd_metodo))
+    app.add_handler(CommandHandler("corpo", cmd_corpo))
     app.add_handler(CommandHandler("sdq", cmd_sdq))
     for h in scacchiera_command_handlers():
         app.add_handler(h)
     app.add_handler(MessageHandler(filters.Regex(f"^{CHIUDI}$"), cmd_chiudi_menu))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, messaggio_libero))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_testo))
     app.add_handler(MessageHandler(filters.COMMAND, cmd_unknown))
     app.add_error_handler(on_error)
     return app
