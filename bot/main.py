@@ -1,4 +1,14 @@
-"""Entry point — polling + health su PORT (Render free)."""
+"""Entry point — polling + health su PORT (Render free).
+
+Il server di health gira in un thread daemon, il polling sul thread
+principale: sono indipendenti. Se il polling muore — 409 Conflict, rete,
+eccezione non ripresa — il thread HTTP continua a rispondere «ok». Una sonda
+che guarda solo GET / dice quindi «vivo» proprio quando e' piu' fuorviante,
+e un keep-alive che si accontenta di quel 200 tiene sveglio un bot sordo.
+
+Per questo `/health` guarda lo stato reale dell'updater e risponde 503 quando
+il polling non gira. E' la sonda da puntare, non `/`.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +18,7 @@ import logging
 import os
 import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from telegram import BotCommand, Update
@@ -42,6 +53,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("protocollo")
 
+# Riferimento all'Application, per poter dire se il polling gira davvero.
+_APP: Application | None = None
+_AVVIO = time.monotonic()
+# All'avvio l'updater non gira ancora: entro questa finestra /health resta 200,
+# altrimenti Render ucciderebbe il deploy mentre il bot si sta alzando.
+GRAZIA_AVVIO = float(os.getenv("GRAZIA_AVVIO", "90"))
+
+
+def stato_polling(app: "Application | None" = None,
+                  da_quanto: float | None = None) -> tuple[bool, str]:
+    """(sano, motivo). Sano = il polling gira, o siamo ancora nella grazia."""
+    app = _APP if app is None else app
+    da_quanto = (time.monotonic() - _AVVIO) if da_quanto is None else da_quanto
+
+    updater = getattr(app, "updater", None) if app is not None else None
+    gira = bool(getattr(updater, "running", False))
+    if gira:
+        return True, "polling attivo"
+    if da_quanto < GRAZIA_AVVIO:
+        return True, f"avvio in corso ({int(da_quanto)}s)"
+    return False, "polling FERMO: il processo e' vivo ma il bot non riceve"
+
 COMMANDS = [
     BotCommand("rrr", "Sottomenu con tutti i comandi"),
     BotCommand("palestra", "Calcolo kcal, proteine, scheda"),
@@ -70,7 +103,21 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.5", "text/plain; charset=utf-8")
+        if path == "/health":
+            # La sonda vera: 503 se il polling non gira. Puntare qui i
+            # watchdog, non "/".
+            sano, motivo = stato_polling()
+            payload = json.dumps(
+                {"ok": sano, "polling": motivo, "versione": "1.6.5"},
+                ensure_ascii=False,
+            ).encode("utf-8")
+            self._send(200 if sano else 503, payload, "application/json; charset=utf-8")
+            return
+        # "/" resta 200 per non far cadere il keep-alive e il deploy, ma smette
+        # di tacere sullo stato del polling.
+        _, motivo = stato_polling()
+        self._send(200, f"ok protocollo-rosso-bot 1.6.5 · {motivo}".encode("utf-8"),
+                   "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -172,10 +219,13 @@ def build_application() -> Application:
 
 
 def main() -> None:
+    global _APP, _AVVIO
+    _AVVIO = time.monotonic()
     port = os.getenv("PORT")
     if port:
         start_health(int(port))
     app = build_application()
+    _APP = app
     logger.info("Long polling. Ctrl+C per fermare.")
     app.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=False)
 
