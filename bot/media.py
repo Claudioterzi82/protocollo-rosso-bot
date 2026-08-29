@@ -37,6 +37,10 @@ URL = {
         "https://images.unsplash.com/photo-1512820790803-83ca734da794"
         "?auto=format&fit=crop&w=1200&q=80"
     ),
+    "metodo": (
+        "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429"
+        "?auto=format&fit=crop&w=1200&q=80"
+    ),
 }
 
 CAPTION = {
@@ -46,6 +50,7 @@ CAPTION = {
     "candela": "Un gesto lento, intero.",
     "scacchiera": "La casa vuota non è il nulla.",
     "libro": "A pagine. Senza chiedere fede.",
+    "metodo": "Il bot è il bordo, non l'abitante.",
 }
 
 
