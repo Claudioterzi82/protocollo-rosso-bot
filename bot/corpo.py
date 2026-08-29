@@ -61,17 +61,26 @@ Scrivilo con /azione o /fuori.
 Senza numero, «ottimizzazione» è un'etichetta vuota.
 """,
     "integratori": """\
-*Integratori* — ipotesi, non fede
+*Lista — etichette, non ricetta*
 
-*Lifespan* (Sinclair): NAD/NMN, resveratrolo. Nei topi a volte; nell'umano alzano un marcatore, non la vita.
+*Fatto utile (se manca)*
+• Vitamina D — se le analisi sono basse
+• Omega-3 — se non mangi pesce
+• Magnesio la sera — se il sonno è corto e il medico non vieta
 
-Regola:
-- zero stack copiati da Instagram;
-- al massimo *una* sostanza, *una* scadenza;
-- un numero da rivedere (analisi, non l'umore);
-- se il numero non si muove, cade.
+*Ipotesi (Sinclair / reel)*
+• NMN / NR — alzano il NAD nel sangue; non è dimostrato che allunghino la vita umana
+• Resveratrolo — prova umana debole; assorbimento scarso
+• Spermidina, fisetina — soprattutto topi
+• Quercetina, TMG — rumore da stack, non un protocollo
 
-Farmaci (metformina, rapamicina, aspirina): medico. Punto.
+*Farmaco, non integratore*
+• Metformina, rapamicina, statina, aspirina quotidiana — solo medico
+
+*Regola*
+Uno alla volta. Una scadenza. Un numero da rivedere.
+Se il numero non si muove, l'ipotesi cade.
+Il bot non prescrive.
 """,
 }
 
