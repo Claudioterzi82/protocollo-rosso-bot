@@ -26,6 +26,7 @@ from bot.db import init_db
 from bot.handlers import build_command_handlers, build_conversation_handlers, cmd_unknown, messaggio_libero
 from bot.menu_rrr import CHIUDI, cmd_chiudi_menu, cmd_rrr
 from bot.metodo import cmd_metodo
+from bot.palestra import build_palestra_conversation, cmd_scheda
 from bot.scacchiera_flow import (
     build_libro_conversation,
     build_scacchiera_conversation,
@@ -43,13 +44,13 @@ logger = logging.getLogger("protocollo")
 
 COMMANDS = [
     BotCommand("rrr", "Sottomenu con tutti i comandi"),
+    BotCommand("palestra", "Calcolo kcal, proteine, scheda"),
+    BotCommand("scheda", "Rivedi il profilo salvato"),
+    BotCommand("corpo", "Sonno, luce, integratori"),
     BotCommand("metodo", "Il ciclo: ipotesi, atto, esito"),
-    BotCommand("corpo", "Hacking onesto: sonno, luce, misura"),
     BotCommand("testimone", "Un atto che un terzo può vedere"),
-    BotCommand("esito", "La risposta del terzo"),
     BotCommand("fuori", "Una cosa fatta oggi, fuori da qui"),
     BotCommand("azione", "Registra un atto verificabile"),
-    BotCommand("libro", "Il Protocollo a pagine"),
     BotCommand("aiuto", "Le tre cose che contano"),
     BotCommand("ping", "Il processo è vivo"),
     BotCommand("annulla", "Esci da un flusso"),
@@ -69,7 +70,7 @@ class _Health(BaseHTTPRequestHandler):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
-        self._send(200, b"ok protocollo-rosso-bot 1.6.4", "text/plain; charset=utf-8")
+        self._send(200, b"ok protocollo-rosso-bot 1.6.5", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
@@ -147,6 +148,7 @@ def build_application() -> Application:
         .post_init(post_init)
         .build()
     )
+    app.add_handler(build_palestra_conversation())
     app.add_handler(build_libro_conversation())
     app.add_handler(build_scacchiera_conversation())
     for h in build_terzo_conversations():
@@ -155,6 +157,7 @@ def build_application() -> Application:
         app.add_handler(h)
     for h in build_command_handlers():
         app.add_handler(h)
+    app.add_handler(CommandHandler("scheda", cmd_scheda))
     app.add_handler(CommandHandler("rrr", cmd_rrr))
     app.add_handler(CommandHandler("metodo", cmd_metodo))
     app.add_handler(CommandHandler("corpo", cmd_corpo))
