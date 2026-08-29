@@ -1,7 +1,4 @@
-"""/rrr — sottomenu: tastiera con tutti i comandi.
-
-Un tocco invia il comando come messaggio. Gli handler esistenti partono da soli.
-"""
+"""/rrr — sottomenu: tastiera con tutti i comandi."""
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import ContextTypes
@@ -9,12 +6,12 @@ from telegram.ext import ContextTypes
 CHIUDI = "Chiudi menu"
 
 RIGHE = [
-    ["/testimone", "/esito", "/fuori"],
-    ["/azione", "/tieni_aperto", "/lista"],
+    ["/metodo", "/etichetta", "/testimone"],
+    ["/esito", "/fuori", "/azione"],
     ["/libro", "/scacchiera", "/santuario"],
     ["/tesi", "/strati", "/p5p6"],
-    ["/veli", "/etichetta", "/registro"],
-    ["/stato", "/sdq", "/ping"],
+    ["/veli", "/tieni_aperto", "/registro"],
+    ["/lista", "/stato", "/ping"],
     ["/start", "/aiuto", CHIUDI],
 ]
 
@@ -23,7 +20,7 @@ TASTIERA = ReplyKeyboardMarkup(RIGHE, resize_keyboard=True, is_persistent=False)
 
 async def cmd_rrr(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text(
-        "R³∞ — tutti i comandi. Tocca uno.",
+        "Tutti i comandi. Tocca uno.",
         reply_markup=TASTIERA,
     )
 
