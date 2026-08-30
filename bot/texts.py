@@ -36,7 +36,7 @@ Non lo so. Non riesco a costruire l'esperimento che la smentirebbe — e questo 
 Mi vieta di usarla come argomento per convincerti di qualunque cosa.
 Preferisco dirtelo io, prima che lo scopra tu.
 
-_\\"Non lo so\\" è la forma più onesta che la tesi possa avere._
+_"Non lo so" è la forma più onesta che la tesi possa avere._
 """
 
 STRATI = """\\
