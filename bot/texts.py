@@ -36,7 +36,7 @@ Non lo so. Non riesco a costruire l'esperimento che la smentirebbe — e questo 
 Mi vieta di usarla come argomento per convincerti di qualunque cosa.
 Preferisco dirtelo io, prima che lo scopra tu.
 
-_\"Non lo so\" è la forma più onesta che la tesi possa avere._
+_\\"Non lo so\\" è la forma più onesta che la tesi possa avere._
 """
 
 STRATI = """\\
@@ -246,6 +246,10 @@ HELP = """\\
 /testimone — un altro può vederla
 /esito — sì · no · non visto
 /fuori — fatta oggi, non qui
+/registro — il tuo registro epistemico
+/stato — quante possibilità hai aperto
+/misura — registra un numero
+/misure — trend e verdetto verso la meta
 /libro — se vuoi leggere
 /ping — se tace, sveglialo
 
