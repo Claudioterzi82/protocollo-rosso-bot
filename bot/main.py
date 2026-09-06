@@ -27,6 +27,7 @@ from bot.handlers import build_command_handlers, build_conversation_handlers, cm
 from bot.menu_rrr import CHIUDI, cmd_chiudi_menu, cmd_rrr
 from bot.metodo import cmd_metodo
 from bot.misure import cmd_misura, cmd_misure
+from bot import network as net
 from bot.palestra import build_palestra_conversation, cmd_scheda
 from bot.scacchiera_flow import (
     build_libro_conversation,
@@ -67,16 +68,46 @@ class _Health(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _header(self, name: str) -> str | None:
+        return self.headers.get(name) or self.headers.get(name.lower())
+
     def do_GET(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
         if path in ("/sdq1/health", "/ask/health"):
             payload = json.dumps(sdq1.health(), ensure_ascii=False).encode("utf-8")
             self._send(200, payload, "application/json; charset=utf-8")
             return
+        if path == "/network/v1/nodes":
+            body = json.dumps(net.nodes_payload(), ensure_ascii=False).encode("utf-8")
+            self._send(200, body, "application/json; charset=utf-8")
+            return
+        if path in ("/", "/health"):
+            self._send(200, b"ok — protocollo-rosso-bot", "text/plain; charset=utf-8")
+            return
+        # legacy catch-all liveness (Render probes)
         self._send(200, b"ok protocollo-rosso-bot 1.6.5", "text/plain; charset=utf-8")
 
     def do_POST(self) -> None:
         path = (self.path or "/").split("?", 1)[0]
+        if path == "/network/v1/event":
+            if not net.verify_network_secret(self._header("X-Network-Secret")):
+                self._send(401, b"unauthorized", "text/plain; charset=utf-8")
+                return
+            n = int(self.headers.get("Content-Length") or 0)
+            raw = self.rfile.read(n) if n else b"{}"
+            try:
+                data = json.loads(raw.decode("utf-8") or "{}")
+            except json.JSONDecodeError:
+                self._send(400, b"bad json", "text/plain; charset=utf-8")
+                return
+            if not net.is_network_event(data):
+                self._send(400, b"bad event", "text/plain; charset=utf-8")
+                return
+            net.remember_network_event(data)
+            # Twin ingest only — never institutional alert / crisis gate.
+            self.send_response(204)
+            self.end_headers()
+            return
         if path != "/ask":
             self._send(404, b'{"error":"not found"}', "application/json")
             return
@@ -101,7 +132,10 @@ class _Health(BaseHTTPRequestHandler):
 def start_health(port: int) -> None:
     server = ThreadingHTTPServer(("0.0.0.0", port), _Health)
     threading.Thread(target=server.serve_forever, daemon=True, name="health").start()
-    logger.info("Health ok su 0.0.0.0:%s", port)
+    logger.info("Health+network su 0.0.0.0:%s node=%s", port, net.get_node_id())
+    peers = net.get_network_peers()
+    if peers:
+        logger.info("NETWORK_PEERS: %s", ", ".join(peers))
 
 
 async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
