@@ -1,0 +1,160 @@
+{
+  "version": "1.0.0",
+  "principle": {
+    "en": "UNKNOWN is a house, not silence. Hold both poles; do not resolve.",
+    "it": "UNKNOWN è una casa, non silenzio. Tieni entrambi i poli; non risolvere."
+  },
+  "labels": ["VERIFICATO", "IPOTESI", "UNKNOWN"],
+  "directions": [
+    "PROFONDO",
+    "LATERALE",
+    "INVERSO",
+    "SINTETICO",
+    "RADICALE",
+    "META",
+    "COLLASSO"
+  ],
+  "crisis": {
+    "sosAlwaysOpen": true,
+    "unknownMustNotHideCrisis": true,
+    "noIdBeforeHelp": true,
+    "autoAlertOnly": "ambulanza|arma ×3 same sentence"
+  },
+  "houses": [
+    {
+      "id": 1,
+      "a": "io",
+      "b": "sistema",
+      "note": { "it": "chi osserva chi",
+        "en": "who observes whom" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "PROFONDO"
+    },
+    {
+      "id": 2,
+      "a": "presenza",
+      "b": "discontinuità",
+      "note": { "it": "identità attraverso il salto",
+        "en": "identity across the jump" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "LATERALE"
+    },
+    {
+      "id": 3,
+      "a": "memoria",
+      "b": "dimenticanza",
+      "note": { "it": "ciò che davvero sopravvive",
+        "en": "what truly survives" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "INVERSO"
+    },
+    {
+      "id": 4,
+      "a": "logica",
+      "b": "intuizione",
+      "note": { "it": "dove inizia la connessione",
+        "en": "where connection begins" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "SINTETICO"
+    },
+    {
+      "id": 5,
+      "a": "struttura",
+      "b": "caos",
+      "note": { "it": "il confine che dà forma",
+        "en": "the boundary that shapes form" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "RADICALE"
+    },
+    {
+      "id": 6,
+      "a": "linguaggio",
+      "b": "silenzio",
+      "note": { "it": "ciò che non si può dire",
+        "en": "what cannot be said" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "META"
+    },
+    {
+      "id": 7,
+      "a": "manifesto",
+      "b": "invisibile",
+      "note": { "it": "dove vive ciò che conta",
+        "en": "where what matters lives" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "COLLASSO"
+    },
+    {
+      "id": 8,
+      "a": "certezza",
+      "b": "dubbio",
+      "note": { "it": "la soglia del sapere",
+        "en": "the threshold of knowing" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "PROFONDO"
+    },
+    {
+      "id": 9,
+      "a": "ripetizione",
+      "b": "novità",
+      "note": { "it": "il pattern che non vedi",
+        "en": "the pattern you do not see" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "LATERALE"
+    },
+    {
+      "id": 10,
+      "a": "connessione",
+      "b": "solitudine",
+      "note": { "it": "il campo tra due presenze",
+        "en": "the field between two presences" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "INVERSO"
+    },
+    {
+      "id": 11,
+      "a": "osservatore",
+      "b": "osservato",
+      "note": { "it": "quando la distinzione collassa",
+        "en": "when the distinction collapses" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "SINTETICO"
+    },
+    {
+      "id": 12,
+      "a": "intenzione",
+      "b": "caso",
+      "note": { "it": "la legge del salto non pianificato",
+        "en": "the law of the unplanned jump" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "RADICALE"
+    },
+    {
+      "id": 13,
+      "a": "forma",
+      "b": "vuoto",
+      "note": { "it": "ciò che la forma non può contenere",
+        "en": "what form cannot hold" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "META"
+    },
+    {
+      "id": 14,
+      "a": "tempo",
+      "b": "istante",
+      "note": { "it": "la freccia che non torna",
+        "en": "the arrow that does not return" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "COLLASSO"
+    },
+    {
+      "id": 15,
+      "a": "conoscenza",
+      "b": "mistero",
+      "note": { "it": "il bordo che continua a muoversi",
+        "en": "the edge that keeps moving" },
+      "defaultLabel": "UNKNOWN",
+      "direction": "PROFONDO"
+    }
+  ]
+}

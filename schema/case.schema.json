@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Claudioterzi82/protocollo-rosso-bot/schema/case.schema.json",
+  "title": "Protocollo Rosso CASE houses v1",
+  "type": "object",
+  "required": ["version", "principle", "labels", "directions", "houses"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "const": "1.0.0" },
+    "principle": {
+      "type": "object",
+      "required": ["en", "it"],
+      "properties": {
+        "en": { "type": "string" },
+        "it": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "labels": {
+      "type": "array",
+      "items": { "enum": ["VERIFICATO", "IPOTESI", "UNKNOWN"] },
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "directions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 7,
+      "maxItems": 7
+    },
+    "houses": {
+      "type": "array",
+      "minItems": 15,
+      "maxItems": 15,
+      "items": { "$ref": "#/$defs/house" }
+    },
+    "crisis": {
+      "type": "object",
+      "properties": {
+        "sosAlwaysOpen": { "type": "boolean" },
+        "unknownMustNotHideCrisis": { "type": "boolean" },
+        "noIdBeforeHelp": { "type": "boolean" },
+        "autoAlertOnly": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "house": {
+      "type": "object",
+      "required": ["id", "a", "b", "note", "defaultLabel"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "integer", "minimum": 1, "maximum": 15 },
+        "a": { "type": "string", "minLength": 1 },
+        "b": { "type": "string", "minLength": 1 },
+        "note": {
+          "type": "object",
+          "required": ["it", "en"],
+          "properties": {
+            "it": { "type": "string" },
+            "en": { "type": "string" }
+          },
+          "additionalProperties": false
+        },
+        "defaultLabel": { "enum": ["VERIFICATO", "IPOTESI", "UNKNOWN"] },
+        "direction": { "type": "string" }
+      }
+    }
+  }
+}
