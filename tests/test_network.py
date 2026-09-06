@@ -16,7 +16,7 @@ from bot import network as net
 
 
 @pytest.fixture()
-ndef http_port(monkeypatch):
+def http_port(monkeypatch):
     monkeypatch.delenv("NETWORK_SECRET", raising=False)
     monkeypatch.setenv("NODE_ID", "protocollo-rosso")
     monkeypatch.delenv("NETWORK_PEERS", raising=False)
