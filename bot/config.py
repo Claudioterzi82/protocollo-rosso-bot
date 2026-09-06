@@ -28,6 +28,11 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 SDQ1_URL = os.getenv("SDQ1_URL", "").strip()
 SDQ1_TIMEOUT = float(os.getenv("SDQ1_TIMEOUT", "8"))
 
+# Network Event v1 (twin Supereroe) — never gates crisis / anti-×3.
+NODE_ID = (os.getenv("NODE_ID") or "protocollo-rosso").strip() or "protocollo-rosso"
+NETWORK_SECRET = os.getenv("NETWORK_SECRET", "").strip()
+NETWORK_PEERS = os.getenv("NETWORK_PEERS", "").strip()
+
 
 def require_token() -> str:
     if not TELEGRAM_BOT_TOKEN or TELEGRAM_BOT_TOKEN.startswith("123456789"):
