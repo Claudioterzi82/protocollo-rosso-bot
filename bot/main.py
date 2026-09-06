@@ -82,7 +82,7 @@ class _Health(BaseHTTPRequestHandler):
             self._send(200, body, "application/json; charset=utf-8")
             return
         if path in ("/", "/health"):
-            self._send(200, b"ok — protocollo-rosso-bot", "text/plain; charset=utf-8")
+            self._send(200, b"ok - protocollo-rosso-bot", "text/plain; charset=utf-8")
             return
         # legacy catch-all liveness (Render probes)
         self._send(200, b"ok protocollo-rosso-bot 1.6.5", "text/plain; charset=utf-8")
