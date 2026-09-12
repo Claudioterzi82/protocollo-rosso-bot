@@ -1,0 +1,41 @@
+{
+  "version": "1.1.0",
+  "scope": "EU official languages (24)",
+  "principle": {
+    "key": "unknown_is_a_house",
+    "rule": "Locale from Telegram body language_code + picker override; never bake-only in release. Missing translation = fallback EN labeled UNKNOWN, never invent certainty. UNKNOWN must not hide SOS/112."
+  },
+  "labels": ["VERIFICATO", "IPOTESI", "UNKNOWN"],
+  "phrases": {
+    "en": { "text": "UNKNOWN is a house, not silence.", "label": "VERIFICATO" },
+    "it": { "text": "UNKNOWN è una casa, non silenzio.", "label": "VERIFICATO" },
+    "fr": { "text": "UNKNOWN est une maison, pas le silence.", "label": "VERIFICATO" },
+    "de": { "text": "UNKNOWN ist ein Haus, nicht Schweigen.", "label": "VERIFICATO" },
+    "nl": { "text": "UNKNOWN is een huis, geen stilte.", "label": "VERIFICATO" },
+    "es": { "text": "UNKNOWN es una casa, no el silencio.", "label": "VERIFICATO" },
+    "pt": { "text": "UNKNOWN é uma casa, não o silêncio.", "label": "VERIFICATO" },
+    "pl": { "text": "UNKNOWN to dom, nie milczenie.", "label": "IPOTESI" },
+    "ro": { "text": "UNKNOWN este o casă, nu tăcere.", "label": "IPOTESI" },
+    "sv": { "text": "UNKNOWN är ett hus, inte tystnad.", "label": "IPOTESI" },
+    "da": { "text": "UNKNOWN er et hus, ikke stilhed.", "label": "IPOTESI" },
+    "fi": { "text": "UNKNOWN on talo, ei hiljaisuus.", "label": "IPOTESI" },
+    "el": { "text": "Το UNKNOWN είναι σπίτι, όχι σιωπή.", "label": "IPOTESI" },
+    "cs": { "text": "UNKNOWN je dům, ne ticho.", "label": "IPOTESI" },
+    "sk": { "text": "UNKNOWN je dom, nie ticho.", "label": "IPOTESI" },
+    "sl": { "text": "UNKNOWN je hiša, ne tišina.", "label": "IPOTESI" },
+    "hr": { "text": "UNKNOWN je kuća, ne šutnja.", "label": "IPOTESI" },
+    "hu": { "text": "Az UNKNOWN ház, nem csend.", "label": "IPOTESI" },
+    "bg": { "text": "UNKNOWN е дом, не мълчание.", "label": "IPOTESI" },
+    "lt": { "text": "UNKNOWN yra namas, o ne tyla.", "label": "IPOTESI" },
+    "lv": { "text": "UNKNOWN ir māja, ne klusums.", "label": "IPOTESI" },
+    "et": { "text": "UNKNOWN on maja, mitte vaikus.", "label": "IPOTESI" },
+    "mt": { "text": "UNKNOWN hija dar, mhux silenzju.", "label": "IPOTESI" },
+    "ga": { "text": "Is teach é UNKNOWN, ní tost.", "label": "IPOTESI" }
+  },
+  "crisis": {
+    "sosAlwaysOpen": true,
+    "unknownMustNotHideCrisis": true,
+    "noIdBeforeHelp": true,
+    "autoAlertOnly": "ambulanza|arma ×3 same sentence"
+  }
+}
