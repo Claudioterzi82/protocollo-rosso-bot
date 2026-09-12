@@ -6,7 +6,8 @@ Canonical epistemic labels and the 15 CASE houses (scacchiera) for Supereroe imp
 
 | File | Role |
 |------|------|
-| `epistemic-labels.md` | P5/P6 contract: `VERIFICATO` / `IPOTESI` / `UNKNOWN` |
+| `epistemic-labels.md` | P5/P6 contract + body-locale rule |
+| `eu24-unknown-house.json` | «UNKNOWN is a house» for 24 EU official languages |
 | `case.schema.json` | JSON Schema for CASE houses |
 | `case.v1.json` | Canonical 15 houses (IT poles + IT/EN notes) |
 
@@ -15,6 +16,7 @@ Canonical epistemic labels and the 15 CASE houses (scacchiera) for Supereroe imp
 - **Do not** import into Supereroe until this schema is on `protocollo-rosso-bot` `main`.
 - Supereroe should stop duplicating CASE in `scacchiera.ts` only after a deliberate import PR.
 - Aligns with `NAS.md` vault labels (same three strings).
+- Locale from Telegram **body** + picker; EU24 phrases from `eu24-unknown-house.json`.
 
 ## Crisis / anti-×3 (locked)
 
@@ -24,4 +26,4 @@ Canonical epistemic labels and the 15 CASE houses (scacchiera) for Supereroe imp
 
 ## Provenance
 
-CASE poles + English glosses: `VERIFICATO` against Supereroe `src/lib/core/scacchiera.ts` (canonical order). Italian notes: `IPOTESI` parallel glosses (same meaning as EN). Direction cycle matches Supereroe `DIRECTIONS`.
+CASE poles + English glosses: `VERIFICATO` against Supereroe `src/lib/core/scacchiera.ts` (canonical order). Italian notes: `IPOTESI` parallel glosses (same meaning as EN). Direction cycle matches Supereroe `DIRECTIONS`. EU24 house phrases: core 7 `VERIFICATO`, others `IPOTESI` pending peer review.
